@@ -8,11 +8,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* Global polish */
+    html,body{max-width:100%;overflow-x:hidden}
+    body{padding-bottom:env(safe-area-inset-bottom)}
     .notranslate{ translate:no; }
     .hide-scrollbar{ scrollbar-width:none; } .hide-scrollbar::-webkit-scrollbar{ display:none; }
     .card { transition: box-shadow .18s, transform .18s; }
     .card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
     .ph { background: linear-gradient(145deg,#f5f5f5,#ececec); }
+    .chip-cat{white-space:nowrap}
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900 overflow-x-hidden" translate="no">
@@ -23,8 +27,8 @@
   </div>
 
   <!-- Header -->
-  <header class="max-w-screen-lg mx-auto px-3 sm:px-4 pt-6">
-    <div class="flex items-center justify-between">
+  <header class="max-w-7xl mx-auto px-3 sm:px-4 pt-6">
+    <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div class="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">C</div>
         <div>
@@ -32,50 +36,56 @@
           <p id="sub" class="text-sm text-neutral-600">Đặt món giao tận nơi</p>
         </div>
       </div>
+
+      <!-- Language -->
       <div class="rounded-xl px-1 py-1 shadow bg-white/70 border backdrop-blur">
         <button id="btnVI" class="px-3 py-1 rounded-lg text-sm font-medium">VI</button>
         <button id="btnEN" class="px-3 py-1 rounded-lg text-sm font-medium">EN</button>
       </div>
 
-      <!-- Contact quick links -->
-<div class="mt-3 flex items-center gap-2 text-sm">
-  <a href="https://zalo.me/0982319886" target="_blank" rel="noopener"
-     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-    <!-- Zalo icon (simple chat bubble) -->
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9l-4 4v-4H7a3 3 0 0 1-3-3V5Z" stroke="currentColor" stroke-width="1.5"/></svg>
-    Zalo: 0982319886
-  </a>
-  <a href="tel:0982319886"
-     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-    <!-- Phone icon -->
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.5"/></svg>
-    Call
-  </a>
-  <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" rel="noopener"
-     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-    <!-- FB 'f' -->
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h3l1-4h-4V7c0-1.1.9-2 2-2h2V2h-3a5 5 0 0 0-5 5v3H6v4h3v8h4Z"/></svg>
-    Facebook
-  </a>
-</div>
-
+      <!-- Quick contact (desktop, collapses below) -->
+      <div class="hidden sm:flex items-center gap-2 text-sm">
+        <a href="https://zalo.me/0982319886" target="_blank" rel="noopener"
+           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9l-4 4v-4H7a3 3 0 0 1-3-3V5Z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Zalo: 0982319886
+        </a>
+        <a href="tel:0982319886"
+           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Call
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" rel="noopener"
+           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h3l1-4h-4V7c0-1.1.9-2 2-2h2V2h-3a5 5 0 0 0-5 5v3H6v4h3v8h4Z"/></svg>
+          Facebook
+        </a>
+      </div>
     </div>
 
-    <!-- Search (mobile chips under) -->
+    <!-- Search + mobile chips -->
     <div class="mt-5">
       <div class="relative">
         <input id="search" placeholder="Tìm món… / Search…"
                class="w-full rounded-2xl border border-neutral-300 bg-white/70 px-4 py-2 outline-none focus:ring-2 focus:ring-black/20" />
-        <span class="absolute right-3 top-2.5 text-neutral-400">⌘K</span>
+        <span class="absolute right-3 top-2.5 text-neutral-400 hidden sm:block">⌘K</span>
       </div>
-      <div id="chipsMobile" class="mt-3 flex gap-2 overflow-x-auto hide-scrollbar md:hidden"></div>
+
+      <!-- Mobile category chips with edge gradients -->
+      <div class="mt-3 md:hidden">
+        <div class="relative -mx-3 px-3">
+          <div class="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-neutral-50 to-transparent"></div>
+          <div class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-neutral-50 to-transparent"></div>
+          <div id="chipsMobile" class="flex gap-2 overflow-x-auto hide-scrollbar snap-x snap-mandatory"></div>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Main -->
-  <main class="max-w-screen-lg mx-auto px-3 sm:px-4 pb-24 mt-6 grid grid-cols-1 md:grid-cols-[220px_1fr_360px] lg:grid-cols-[240px_1fr_380px] gap-6">
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 pb-28 mt-4 grid grid-cols-1 lg:grid-cols-[240px_1fr_380px] gap-5">
 
-    <!-- Sidebar categories -->
+    <!-- Sidebar categories (desktop) -->
     <aside class="hidden md:block md:sticky md:top-4 h-max">
       <div class="rounded-2xl bg-white border shadow p-3">
         <h3 class="font-semibold mb-2">Danh mục / Categories</h3>
@@ -85,14 +95,14 @@
 
     <!-- MENU GRID -->
     <section>
-      <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
       <div id="empty" class="hidden text-center text-neutral-500 py-16">Không có món phù hợp / No items</div>
     </section>
 
     <!-- CART + CHECKOUT -->
     <aside class="md:sticky md:top-4">
-  <div class="p-5 rounded-2xl bg-white shadow border
-              max-h-[calc(100svh-2rem)] overflow-y-auto overflow-x-hidden pr-2">
+      <div class="p-5 rounded-2xl bg-white shadow border
+                  max-h-[calc(100svh-2rem)] overflow-y-auto overflow-x-hidden pr-2">
         <h2 id="cartTitle" class="text-lg font-semibold">Giỏ hàng</h2>
         <div id="cart" class="mt-3 grid gap-2"></div>
 
@@ -141,34 +151,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // i18n strings
 const STR = {
-  vi: {
-    sub: "Đặt món giao tận nơi",
-    cart: "Giỏ hàng",
-    deliveryInfo: "Thông tin giao hàng",
-    add: "Thêm",
-    qty: "SL",
-    remove: "Xoá",
-    empty: "Không có món phù hợp",
-    search: "Tìm món…",
-    cat: "Danh mục",
-  },
-  en: {
-    sub: "Order home delivery",
-    cart: "Cart",
-    deliveryInfo: "Delivery details",
-    add: "Add",
-    qty: "Qty",
-    remove: "Remove",
-    empty: "No matching items",
-    search: "Search…",
-    cat: "Categories",
-  }
+  vi: { sub:"Đặt món giao tận nơi", cart:"Giỏ hàng", deliveryInfo:"Thông tin giao hàng",
+        add:"Thêm", qty:"SL", remove:"Xoá", empty:"Không có món phù hợp", search:"Tìm món…", cat:"Danh mục" },
+  en: { sub:"Order home delivery", cart:"Cart", deliveryInfo:"Delivery details",
+        add:"Add", qty:"Qty", remove:"Remove", empty:"No matching items", search:"Search…", cat:"Categories" }
 };
 
 let lang = localStorage.getItem('lang') || 'vi';
 const state = { products: [], filtered: [], cart: [], cats: [], catActive: 'ALL', deliveryFee: 0 };
 
-// Helpers
 const money = (v)=> (v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US') + (lang==='vi' ? ' đ' : ' VND');
 const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1500); };
 function t(key){ return STR[lang][key]; }
@@ -184,15 +175,15 @@ document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem
 
 function badge(label, active=false){
   const b=document.createElement('button');
-  b.className='w-full text-left px-3 py-2 rounded-lg text-sm border bg-white hover:bg-neutral-50';
-  if(active) b.classList.add('ring-1','ring-black/20','font-semibold');
+  b.className='w-full text-left px-3 py-2 rounded-xl text-sm border bg-white hover:bg-neutral-50 transition';
+  if(active) b.classList.add('ring-2','ring-black','font-semibold');
   b.textContent = label;
   return b;
 }
 function chip(label, active=false){
   const b=document.createElement('button');
-  b.className='px-3 py-1.5 rounded-xl text-sm bg-white/90 border hover:bg-white';
-  if(active) b.classList.add('ring-1','ring-black/20','font-semibold');
+  b.className='chip-cat px-3 py-2 rounded-2xl text-sm bg-white/90 border hover:bg-white snap-start shrink-0 transition';
+  if(active) b.classList.add('ring-2','ring-black','font-semibold');
   b.textContent = label;
   return b;
 }
@@ -221,7 +212,7 @@ function filter(){
 
 function placeholderImg(name){
   const initials = (name || 'CAFE').split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
-  return `<div class="ph w-full h-32 grid place-items-center text-neutral-400 font-semibold">${initials}</div>`;
+  return `<div class="ph w-full h-36 sm:h-40 grid place-items-center text-neutral-400 font-semibold">${initials}</div>`;
 }
 
 function renderMenu(){
@@ -233,7 +224,9 @@ function renderMenu(){
     const title = lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi);
     const subtitle = p.category;
     card.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" alt="" class="w-full h-32 object-cover">` : placeholderImg(title)}
+      ${p.image_url
+        ? `<img src="${p.image_url}" alt="" class="w-full h-36 sm:h-40 object-cover">`
+        : placeholderImg(title)}
       <div class="p-4">
         <div class="font-semibold leading-snug notranslate line-clamp-2">${title}</div>
         <div class="text-xs text-neutral-500 mt-1">${subtitle}</div>
@@ -333,7 +326,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
 
   if(!name || !phone){ return toast(lang==='vi'?'Thiếu tên/SĐT':'Missing name/phone'); }
 
-  // 1) Customer UPSERT by phone (requires unique index on customers(phone))
+  // 1) Customer UPSERT by phone (unique index on customers(phone))
   const { data: cRow, error: cErr } = await sb
     .from('customers')
     .upsert({ name, phone }, { onConflict: 'phone' })
@@ -377,8 +370,9 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
 syncTexts();
 loadMenu();
 </script>
-  <!-- Floating contact buttons -->
-<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+
+<!-- Floating contact buttons (mobile-friendly) -->
+<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 sm:hidden">
   <a href="https://zalo.me/0982319886" target="_blank" rel="noopener"
      class="shadow-lg rounded-full bg-white border hover:bg-neutral-50 w-12 h-12 grid place-items-center"
      title="Chat Zalo">
@@ -387,7 +381,6 @@ loadMenu();
   <a href="tel:0982319886"
      class="shadow-lg rounded-full bg-white border hover:bg-neutral-50 w-12 h-12 grid place-items-center"
      title="Gọi điện / Call">
-    <!-- phone -->
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
   </a>
   <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" rel="noopener"
