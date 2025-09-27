@@ -7,8 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .chip{border-radius:9999px;padding:.35rem .8rem;border:1px solid #e5e7eb;background:#fff}
+    .chip{border-radius:9999px;padding:.4rem .85rem;border:1px solid #e5e7eb;background:#fff}
     .chip.active{background:#111;color:#fff;border-color:#111}
+    @media (max-width: 640px){
+      /* nicer tap targets */
+      .chip{padding:.5rem .95rem}
+    }
     @media print{
       body{background:#fff}
       .no-print{display:none!important}
@@ -16,49 +20,58 @@
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900">
-  <div class="max-w-7xl mx-auto px-4 py-6">
-    <div class="flex items-center justify-between">
+
+  <!-- Header -->
+  <header class="max-w-7xl mx-auto px-4 py-5">
+    <div class="flex items-center justify-between gap-3">
       <h1 class="text-2xl font-bold">📦 Admin — Orders</h1>
       <div class="no-print flex gap-2">
-        <a href="./" class="px-3 py-2 rounded-lg border bg-white">← Storefront</a>
+        <a href="./" class="px-3 py-2 rounded-lg border bg-white hover:bg-neutral-50">← Storefront</a>
         <button id="exportOrders" class="px-3 py-2 rounded-lg bg-black text-white">Export CSV (full)</button>
       </div>
     </div>
+  </header>
 
-    <div class="no-print mt-4 grid md:grid-cols-[1fr_180px_180px] gap-3">
+  <!-- Sticky filters (mobile) -->
+  <div class="no-print sticky top-0 z-40 bg-neutral-50/80 backdrop-blur border-y">
+    <div class="max-w-7xl mx-auto px-4 py-3 grid gap-2 sm:grid-cols-[1fr_180px_180px]">
       <input id="q" placeholder="Search name/phone…" class="border rounded-xl px-3 py-2 bg-white">
-      <input id="dateFrom" type="date" class="border rounded-xl px-3 py-2 bg-white">
-      <input id="dateTo"   type="date" class="border rounded-xl px-3 py-2 bg-white">
+      <div class="grid grid-cols-2 gap-2 sm:contents">
+        <input id="dateFrom" type="date" class="border rounded-xl px-3 py-2 bg-white">
+        <input id="dateTo"   type="date" class="border rounded-xl px-3 py-2 bg-white">
+      </div>
+      <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
+        <button data-st="all"       class="chip active">All</button>
+        <button data-st="pending"   class="chip">Pending</button>
+        <button data-st="paid"      class="chip">Paid</button>
+        <button data-st="delivered" class="chip">Delivered</button>
+      </div>
     </div>
-
-    <!-- Status filter chips -->
-    <div class="no-print mt-3 flex flex-wrap gap-2">
-      <button data-st="all"       class="chip active">All</button>
-      <button data-st="pending"   class="chip">Pending</button>
-      <button data-st="paid"      class="chip">Paid</button>
-      <button data-st="delivered" class="chip">Delivered</button>
-    </div>
-
-    <div id="list" class="mt-5 grid gap-4"></div>
-    <p id="empty" class="hidden text-neutral-500 mt-10 text-center">No orders yet.</p>
   </div>
 
+  <!-- List -->
+  <main class="max-w-7xl mx-auto px-4 py-5">
+    <div id="list" class="grid gap-4"></div>
+    <p id="empty" class="hidden text-neutral-500 mt-10 text-center">No orders yet.</p>
+  </main>
+
 <script>
-/* ==== CONFIG (change if needed) ==== */
+/* ====== CONFIG ====== */
 const SUPABASE_URL = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
-/* ================================== */
+/* ==================== */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const money = v => (v||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
+/** Load orders + customers + items + consent and render */
 async function load() {
   const q = document.getElementById('q').value.trim().toLowerCase();
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  // 1) orders
+  // Orders
   let oQuery = sb.from('orders')
     .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
     .order('created_at', { ascending:false });
@@ -70,12 +83,12 @@ async function load() {
   if (oErr) { console.error(oErr); alert('Failed to load orders'); return; }
   if (!orders?.length) { render([]); return; }
 
-  // 2) customers
+  // Customers
   const customerIds = [...new Set(orders.map(o => o.customer_id).filter(Boolean))];
   const { data: cust } = await sb.from('customers').select('id,name,phone').in('id', customerIds);
   const customersById = Object.fromEntries((cust||[]).map(c=>[c.id,c]));
 
-  // 3) items
+  // Items
   const orderIds = orders.map(o=>o.id);
   const { data: items } = await sb.from('order_items')
     .select('order_id,name,unit_price,qty')
@@ -83,13 +96,13 @@ async function load() {
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
-  // 4) marketing consent (yes/no per customer)
+  // Consents
   const { data: consents } = await sb.from('marketing_consents')
     .select('customer_id')
     .in('customer_id', customerIds);
   const consentSet = new Set((consents||[]).map(c=>c.customer_id));
 
-  // stitch
+  // Merge
   const merged = orders.map(o => ({
     ...o,
     customer: customersById[o.customer_id] || null,
@@ -97,7 +110,7 @@ async function load() {
     consent: consentSet.has(o.customer_id)
   }));
 
-  // search
+  // Search filter
   const filtered = q
     ? merged.filter(o => {
         const n = (o.customer?.name || '').toLowerCase();
@@ -118,9 +131,7 @@ function render(orders) {
 
   orders.forEach(o=>{
     const a = o.address_snapshot || {};
-    const card = document.createElement('div');
-    card.className = 'bg-white border shadow rounded-2xl p-4';
-
+    const addrStr = [a.street,a.ward,a.district,a.province].filter(Boolean).join(', ');
     const itemsHtml = (o.order_items||[]).map(it=>`
       <div class="flex justify-between">
         <div class="truncate">${it.name}</div>
@@ -128,7 +139,8 @@ function render(orders) {
       </div>
     `).join('');
 
-    const addrStr = [a.street,a.ward,a.district,a.province].filter(Boolean).join(', ');
+    const card = document.createElement('div');
+    card.className = 'bg-white border shadow-sm rounded-2xl p-4';
 
     card.innerHTML = `
       <div class="flex flex-wrap items-start justify-between gap-3">
@@ -147,12 +159,12 @@ function render(orders) {
           <div class="font-semibold text-lg mt-1">Total: ${money(o.total)}</div>
           <div class="mt-1 inline-block text-xs px-2 py-1 rounded bg-neutral-100 border">${o.status}</div>
           <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
-            <button class="px-3 py-1 rounded-lg border bg-white" data-act="copy">Copy address</button>
-            <a class="px-3 py-1 rounded-lg border bg-white" target="_blank"
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy address</button>
+            <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
                href="https://www.google.com/maps/search/${encodeURIComponent(addrStr)}">Map</a>
             <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">Print receipt</button>
-            <button class="px-3 py-1 rounded-lg border bg-white" data-act="set:paid">Mark Paid</button>
-            <button class="px-3 py-1 rounded-lg border bg-white" data-act="set:delivered">Delivered</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Mark Paid</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:delivered">Delivered</button>
           </div>
         </div>
       </div>
@@ -186,7 +198,7 @@ function render(orders) {
   });
 }
 
-/* ---- Print nice receipt into a popup and trigger browser print ---- */
+/* Pretty printer */
 function printReceipt(o){
   const a = o.address_snapshot || {};
   const items = o.order_items || [];
@@ -199,7 +211,7 @@ function printReceipt(o){
       <td style="text-align:right">${money(it.unit_price*it.qty)}</td>
     </tr>
   `).join('');
-  const wnd = window.open('', '_blank', 'width=420,height=600');
+  const wnd = window.open('', '_blank', 'width=420,height=620');
   wnd.document.write(`
     <html><head><title>Receipt ${o.id.slice(0,8)}</title>
     <style>
@@ -246,7 +258,7 @@ function printReceipt(o){
   wnd.onload = () => wnd.print();
 }
 
-/* ---- Export CSV with all checkout details + items string ---- */
+/* CSV export (orders + customer + address + consent + items) */
 document.getElementById('exportOrders').onclick = async ()=>{
   const { data: orders, error: oErr } = await sb.from('orders')
     .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
@@ -293,11 +305,10 @@ document.getElementById('exportOrders').onclick = async ()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 
-/* ---- Filters & inputs ---- */
+/* Filters */
 document.getElementById('q').addEventListener('input', load);
 document.getElementById('dateFrom').addEventListener('change', load);
 document.getElementById('dateTo').addEventListener('change', load);
-
 document.querySelectorAll('[data-st]').forEach(b=>{
   b.onclick = () => {
     document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('active'));
