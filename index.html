@@ -9,92 +9,98 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .notranslate{ translate:no; }
-    .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.7); }
+    .hide-scrollbar{ scrollbar-width:none; } .hide-scrollbar::-webkit-scrollbar{ display:none; }
+    .card { transition: box-shadow .18s, transform .18s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+    .ph { background: linear-gradient(145deg,#f5f5f5,#ececec); }
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900" translate="no">
-  <div class="relative isolate">
-    <!-- Gradient header -->
-    <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 opacity-60">
-      <div class="h-56 bg-gradient-to-br from-amber-200 via-rose-200 to-sky-200"></div>
+  <!-- Top gradient -->
+  <div class="pointer-events-none absolute inset-0 -z-10">
+    <div class="h-56 w-full bg-gradient-to-br from-amber-100 via-rose-100 to-sky-100"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="max-w-7xl mx-auto px-4 pt-6">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">C</div>
+        <div>
+          <h1 class="text-2xl font-bold notranslate">CAFE — CACAO</h1>
+          <p id="sub" class="text-sm text-neutral-600">Đặt món giao tận nơi</p>
+        </div>
+      </div>
+      <div class="rounded-xl px-1 py-1 shadow bg-white/70 border backdrop-blur">
+        <button id="btnVI" class="px-3 py-1 rounded-lg text-sm font-medium">VI</button>
+        <button id="btnEN" class="px-3 py-1 rounded-lg text-sm font-medium">EN</button>
+      </div>
     </div>
 
-    <!-- Header -->
-    <header class="max-w-5xl mx-auto px-4 pt-6">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-2xl bg-black/90 text-white grid place-items-center font-bold">C</div>
-          <div>
-            <h1 class="text-2xl font-bold notranslate">CAFE — CACAO</h1>
-            <p id="sub" class="text-sm text-neutral-600">Đặt món giao tận nơi</p>
+    <!-- Search (mobile chips under) -->
+    <div class="mt-5">
+      <div class="relative">
+        <input id="search" placeholder="Tìm món… / Search…"
+               class="w-full rounded-2xl border border-neutral-300 bg-white/70 px-4 py-2 outline-none focus:ring-2 focus:ring-black/20" />
+        <span class="absolute right-3 top-2.5 text-neutral-400">⌘K</span>
+      </div>
+      <div id="chipsMobile" class="mt-3 flex gap-2 overflow-x-auto hide-scrollbar md:hidden"></div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto px-4 pb-24 mt-6 grid grid-cols-1 md:grid-cols-[220px_1fr_360px] gap-6">
+    <!-- Sidebar categories -->
+    <aside class="hidden md:block md:sticky md:top-4 h-max">
+      <div class="rounded-2xl bg-white border shadow p-3">
+        <h3 class="font-semibold mb-2">Danh mục / Categories</h3>
+        <div id="cats" class="grid gap-2"></div>
+      </div>
+    </aside>
+
+    <!-- MENU GRID -->
+    <section>
+      <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      <div id="empty" class="hidden text-center text-neutral-500 py-16">Không có món phù hợp / No items</div>
+    </section>
+
+    <!-- CART + CHECKOUT -->
+    <aside class="md:sticky md:top-4 h-max">
+      <div class="p-5 rounded-2xl bg-white shadow border">
+        <h2 id="cartTitle" class="text-lg font-semibold">Giỏ hàng</h2>
+        <div id="cart" class="mt-3 grid gap-2"></div>
+
+        <div class="mt-3 border-t pt-3 text-sm space-y-1">
+          <div class="flex justify-between"><span>Tổng tạm / Subtotal</span><span id="subtotal">0 đ</span></div>
+          <div class="flex justify-between"><span>Phí giao / Delivery</span><span id="delivery">0 đ</span></div>
+          <div class="flex justify-between font-semibold text-base pt-1">
+            <span>Tổng / Total</span><span id="total">0 đ</span>
           </div>
         </div>
-        <!-- Language toggle -->
-        <div class="glass rounded-xl px-2 py-1 shadow border border-white/40">
-          <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium">VI</button>
-          <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium">EN</button>
-        </div>
-      </div>
 
-      <!-- Search + category bar -->
-      <div class="mt-5 flex flex-col gap-3 md:flex-row md:items-center">
-        <div class="relative flex-1">
-          <input id="search" placeholder="Tìm món… / Search…"
-                 class="w-full rounded-xl border border-neutral-300 bg-white/70 px-4 py-2 outline-none focus:ring-2 focus:ring-black/20" />
-          <span class="absolute right-3 top-2.5 text-neutral-400">⌘K</span>
-        </div>
-        <div class="overflow-x-auto hide-scrollbar">
-          <div id="tabs" class="flex gap-2"></div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main -->
-    <main class="max-w-5xl mx-auto px-4 pb-24 mt-6 grid md:grid-cols-[1fr_360px] gap-6">
-      <!-- MENU LIST -->
-      <section>
-        <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
-        <div id="empty" class="hidden text-center text-neutral-500 py-16">Không có món phù hợp / No items</div>
-      </section>
-
-      <!-- CART + CHECKOUT -->
-      <aside class="md:sticky md:top-4 h-max">
-        <div class="p-4 rounded-2xl bg-white shadow border">
-          <h2 id="cartTitle" class="text-lg font-semibold">Giỏ hàng</h2>
-          <div id="cart" class="mt-3 grid gap-2"></div>
-
-          <div class="mt-3 border-t pt-3 text-sm">
-            <div class="flex justify-between"><span>Tổng tạm / Subtotal</span><span id="subtotal">0 đ</span></div>
-            <div class="flex justify-between"><span>Phí giao / Delivery</span><span id="delivery">0 đ</span></div>
-            <div class="flex justify-between font-semibold text-base mt-1">
-              <span>Tổng / Total</span><span id="total">0 đ</span>
+        <div class="mt-4">
+          <h3 id="deliveryTitle" class="font-semibold">Thông tin giao hàng</h3>
+          <form id="checkoutForm" class="mt-2 grid gap-2">
+            <input name="name" placeholder="Họ tên / Name" class="border p-2 rounded-lg" required />
+            <input name="phone" placeholder="SĐT (09xxxx) / Phone" class="border p-2 rounded-lg" required />
+            <input name="street" placeholder="Số nhà, đường / Street" class="border p-2 rounded-lg" required />
+            <div class="grid grid-cols-3 gap-2">
+              <input name="ward" placeholder="Phường / Ward" class="border p-2 rounded-lg" required />
+              <input name="district" placeholder="Quận / District" class="border p-2 rounded-lg" required />
+              <input name="province" placeholder="Tỉnh / Province" class="border p-2 rounded-lg" required />
             </div>
-          </div>
-
-          <div class="mt-4">
-            <h3 id="deliveryTitle" class="font-semibold">Thông tin giao hàng</h3>
-            <form id="checkoutForm" class="mt-2 grid gap-2">
-              <input name="name" placeholder="Họ tên / Name" class="border p-2 rounded-lg" required />
-              <input name="phone" placeholder="SĐT (09xxxx) / Phone" class="border p-2 rounded-lg" required />
-              <input name="street" placeholder="Số nhà, đường / Street" class="border p-2 rounded-lg" required />
-              <div class="grid grid-cols-3 gap-2">
-                <input name="ward" placeholder="Phường / Ward" class="border p-2 rounded-lg" required />
-                <input name="district" placeholder="Quận / District" class="border p-2 rounded-lg" required />
-                <input name="province" placeholder="Tỉnh / Province" class="border p-2 rounded-lg" required />
-              </div>
-              <textarea name="note" placeholder="Ghi chú / Note (optional)" class="border p-2 rounded-lg"></textarea>
-              <label class="inline-flex items-center gap-2 text-sm">
-                <input type="checkbox" name="consent"/>
-                <span>Đồng ý nhận khuyến mãi / I agree to receive promotions</span>
-              </label>
-              <button class="mt-1 bg-black text-white w-full py-2 rounded-xl font-medium">Đặt hàng / Place order</button>
-            </form>
-            <p id="resultMsg" class="mt-3 hidden text-green-700 font-medium">Đã đặt hàng! / Order placed!</p>
-          </div>
+            <textarea name="note" placeholder="Ghi chú / Note (optional)" class="border p-2 rounded-lg"></textarea>
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input type="checkbox" name="consent"/>
+              <span>Đồng ý nhận khuyến mãi / I agree to receive promotions</span>
+            </label>
+            <button class="mt-1 bg-black text-white w-full py-2.5 rounded-xl font-medium">Đặt hàng / Place order</button>
+          </form>
+          <p id="resultMsg" class="mt-3 hidden text-green-700 font-medium">Đã đặt hàng! / Order placed!</p>
         </div>
-      </aside>
-    </main>
-  </div>
+      </div>
+    </aside>
+  </main>
 
   <!-- Toast -->
   <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-5 hidden px-4 py-2 rounded-xl bg-black text-white shadow"></div>
@@ -117,8 +123,8 @@ const STR = {
     qty: "SL",
     remove: "Xoá",
     empty: "Không có món phù hợp",
-    placed: "Đã đặt hàng! Cảm ơn bạn.",
     search: "Tìm món…",
+    cat: "Danh mục",
   },
   en: {
     sub: "Order home delivery",
@@ -128,8 +134,8 @@ const STR = {
     qty: "Qty",
     remove: "Remove",
     empty: "No matching items",
-    placed: "Order placed! Thank you.",
-    search: "Search items…",
+    search: "Search…",
+    cat: "Categories",
   }
 };
 
@@ -139,9 +145,7 @@ const state = { products: [], filtered: [], cart: [], cats: [], catActive: 'ALL'
 // Helpers
 const money = (v)=> (v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US') + (lang==='vi' ? ' đ' : ' VND');
 const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1500); };
-
 function t(key){ return STR[lang][key]; }
-
 function syncTexts(){
   document.getElementById('sub').textContent = t('sub');
   document.getElementById('cartTitle').textContent = t('cart');
@@ -152,28 +156,31 @@ function syncTexts(){
 document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem('lang','vi'); renderAll(); };
 document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); renderAll(); };
 
-function buildTabs(){
-  const tabs = document.getElementById('tabs');
-  tabs.innerHTML = '';
-  const mk = (val,label)=>{
-    const b=document.createElement('button');
-    b.className='px-3 py-1.5 rounded-lg text-sm bg-white/80 border hover:bg-white';
-    b.textContent=label;
-    if(state.catActive===val) b.classList.add('ring-1','ring-black/20','font-semibold');
-    b.onclick=()=>{ state.catActive=val; filter(); renderMenu(); highlightTabs(); };
-    return b;
-  };
-  tabs.appendChild(mk('ALL','All'));
-  state.cats.forEach(c=> tabs.appendChild(mk(c,c)));
+function badge(label, active=false){
+  const b=document.createElement('button');
+  b.className='w-full text-left px-3 py-2 rounded-lg text-sm border bg-white hover:bg-neutral-50';
+  if(active) b.classList.add('ring-1','ring-black/20','font-semibold');
+  b.textContent = label;
+  return b;
+}
+function chip(label, active=false){
+  const b=document.createElement('button');
+  b.className='px-3 py-1.5 rounded-xl text-sm bg-white/90 border hover:bg-white';
+  if(active) b.classList.add('ring-1','ring-black/20','font-semibold');
+  b.textContent = label;
+  return b;
 }
 
-function highlightTabs(){
-  const tabs = document.getElementById('tabs').children;
-  [...tabs].forEach(b=>{
-    b.classList.remove('ring-1','ring-black/20','font-semibold');
-    if(b.textContent===state.catActive || (state.catActive==='ALL' && b.textContent==='All')){
-      b.classList.add('ring-1','ring-black/20','font-semibold');
-    }
+function buildCategories(){
+  const left = document.getElementById('cats');
+  const mobile = document.getElementById('chipsMobile');
+  left.innerHTML = ''; mobile.innerHTML = '';
+  const all = ['All', ...state.cats];
+  all.forEach(label=>{
+    const isActive = (state.catActive==='ALL' && label==='All') || label===state.catActive;
+    const b1 = badge(label, isActive); const b2 = chip(label, isActive);
+    b1.onclick = b2.onclick = ()=>{ state.catActive = (label==='All'?'ALL':label); filter(); renderMenu(); buildCategories(); };
+    left.appendChild(b1); mobile.appendChild(b2);
   });
 }
 
@@ -186,23 +193,26 @@ function filter(){
   document.getElementById('empty').classList.toggle('hidden', arr.length>0);
 }
 
+function placeholderImg(name){
+  const initials = (name || 'CAFE').split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
+  return `<div class="ph w-full h-32 grid place-items-center text-neutral-400 font-semibold">${initials}</div>`;
+}
+
 function renderMenu(){
   const wrap = document.getElementById('menu');
   wrap.innerHTML = '';
   state.filtered.forEach(p=>{
     const card = document.createElement('div');
-    card.className = 'rounded-2xl bg-white shadow border overflow-hidden hover:shadow-lg transition-shadow';
+    card.className = 'card rounded-2xl bg-white shadow border overflow-hidden';
+    const title = lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi);
+    const subtitle = lang==='vi' ? p.category : p.category; // same labels today
     card.innerHTML = `
-      <div class="p-3 flex items-start gap-3">
-        <div class="flex-1">
-          <div class="font-semibold leading-snug notranslate">${lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi)}</div>
-          <div class="text-sm text-neutral-500 mt-0.5">${p.category}</div>
-          <div class="mt-2 font-semibold">${money(p.price)}</div>
-        </div>
-        ${p.image_url ? `<img src="${p.image_url}" alt="" class="w-20 h-20 object-cover rounded-xl border">` : ''}
-      </div>
-      <div class="p-3 pt-0">
-        <button class="w-full rounded-xl bg-black text-white py-2 text-sm font-medium">${t('add')}</button>
+      ${p.image_url ? `<img src="${p.image_url}" alt="" class="w-full h-32 object-cover">` : placeholderImg(title)}
+      <div class="p-4">
+        <div class="font-semibold leading-snug notranslate line-clamp-2">${title}</div>
+        <div class="text-xs text-neutral-500 mt-1">${subtitle}</div>
+        <div class="mt-2 text-lg font-semibold">${money(p.price)}</div>
+        <button class="mt-3 w-full rounded-xl bg-black text-white py-2 text-sm font-medium">${t('add')}</button>
       </div>
     `;
     card.querySelector('button').onclick = ()=>{
@@ -228,12 +238,12 @@ function renderCart(){
     row.innerHTML = `
       <div class="min-w-0">
         <div class="truncate font-medium">${nameShow}</div>
-        <div class="text-sm text-neutral-500">${money(i.price)}</div>
+        <div class="text-xs text-neutral-500">${money(i.price)}</div>
       </div>
       <div class="flex items-center gap-2">
-        <button class="w-6 h-6 grid place-items-center border rounded" data-op="-" data-idx="${idx}">−</button>
+        <button class="w-7 h-7 grid place-items-center border rounded" data-op="-" data-idx="${idx}">−</button>
         <span class="w-6 text-center">${i.qty}</span>
-        <button class="w-6 h-6 grid place-items-center border rounded" data-op="+" data-idx="${idx}">+</button>
+        <button class="w-7 h-7 grid place-items-center border rounded" data-op="+" data-idx="${idx}">+</button>
         <button class="text-xs px-2 py-1 border rounded" data-op="x" data-idx="${idx}">${t('remove')}</button>
       </div>
     `;
@@ -260,8 +270,7 @@ function renderAll(){
   filter();
   renderMenu();
   renderCart();
-  buildTabs();
-  highlightTabs();
+  buildCategories();
 }
 
 async function loadMenu(){
@@ -305,9 +314,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
 
   // 2) Consent
   if(consent){
-    await sb.from('marketing_consents').insert({
-      customer_id: cRow.id, consent: true, channel: 'sms', source: 'checkout'
-    });
+    await sb.from('marketing_consents').insert({ customer_id: cRow.id, consent: true, channel: 'sms', source: 'checkout' });
   }
 
   // 3) Order + items
@@ -329,7 +336,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
   state.cart = []; renderCart();
   e.target.reset();
   const msg = document.getElementById('resultMsg');
-  msg.textContent = t('placed');
+  msg.textContent = (lang==='vi' ? 'Đã đặt hàng! Cảm ơn bạn.' : 'Order placed! Thank you.');
   msg.classList.remove('hidden');
   setTimeout(()=>msg.classList.add('hidden'), 2500);
 });
@@ -337,7 +344,6 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
 // Init
 syncTexts();
 loadMenu();
-
 </script>
 </body>
 </html>
