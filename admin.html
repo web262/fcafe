@@ -41,30 +41,59 @@ async function load() {
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  let query = sb.from('orders')
-    .select(`
-      id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot,
-      customers:customer_id ( name, phone ),
-      order_items ( id, name, unit_price, qty )
-    `)
+  // 1) Orders (no embedding)
+  let oQuery = sb.from('orders')
+    .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
     .order('created_at', { ascending:false });
 
-  if (from) query = query.gte('created_at', from);
-  if (to)   query = query.lte('created_at', to + ' 23:59:59');
+  if (from) oQuery = oQuery.gte('created_at', from);
+  if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
 
-  const { data, error } = await query;
-  if (error) { console.error(error); alert('Failed to load orders'); return; }
+  const { data: orders, error: oErr } = await oQuery;
+  if (oErr) { console.error(oErr); alert('Failed to load orders'); return; }
+  if (!orders?.length) { render([]); return; }
 
-  let orders = data;
-  if (q) {
-    orders = orders.filter(o => {
-      const name = o.customers?.name?.toLowerCase() || '';
-      const phone = o.customers?.phone?.toLowerCase() || '';
-      return name.includes(q) || phone.includes(q);
-    });
+  // 2) Fetch customers for these orders
+  const customerIds = [...new Set(orders.map(o => o.customer_id).filter(Boolean))];
+  let customersById = {};
+  if (customerIds.length) {
+    const { data: cust, error: cErr } = await sb.from('customers')
+      .select('id, name, phone')
+      .in('id', customerIds);
+    if (cErr) { console.warn('Customers load error (ignored):', cErr); }
+    else { cust.forEach(c => customersById[c.id] = c); }
   }
 
-  render(orders);
+  // 3) Fetch items for these orders
+  const orderIds = orders.map(o => o.id);
+  const { data: items, error: iErr } = await sb.from('order_items')
+    .select('order_id, name, unit_price, qty')
+    .in('order_id', orderIds);
+  if (iErr) { console.warn('Items load error (ignored):', iErr); }
+
+  // group items by order_id
+  const itemsByOrder = {};
+  (items || []).forEach(it => {
+    (itemsByOrder[it.order_id] ||= []).push(it);
+  });
+
+  // stitch
+  const merged = orders.map(o => ({
+    ...o,
+    customer: customersById[o.customer_id] || null,
+    order_items: itemsByOrder[o.id] || []
+  }));
+
+  // client-side search
+  const filtered = q
+    ? merged.filter(o => {
+        const n = (o.customer?.name || '').toLowerCase();
+        const p = (o.customer?.phone || '').toLowerCase();
+        return n.includes(q) || p.includes(q);
+      })
+    : merged;
+
+  render(filtered);
 }
 
 function render(orders) {
@@ -81,7 +110,7 @@ function render(orders) {
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div class="text-sm text-neutral-500">#${o.id.slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
-          <div class="font-semibold mt-1">${o.customers?.name || '—'} • ${o.customers?.phone || ''}</div>
+          <div class="font-semibold mt-1">${o.customer?.name || '—'} • ${o.customer?.phone || ''}</div>
           <div class="text-sm text-neutral-600">${a.street||''}, ${a.ward||''}, ${a.district||''}, ${a.province||''}</div>
           ${o.note ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.note}</div>` : ''}
         </div>
@@ -123,7 +152,6 @@ document.getElementById('exportCustomers').onclick = async ()=>{
 document.getElementById('q').addEventListener('input', load);
 document.getElementById('dateFrom').addEventListener('change', load);
 document.getElementById('dateTo').addEventListener('change', load);
-
 load();
 </script>
 </body>
