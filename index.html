@@ -3,154 +3,288 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Café Delivery</title>
   <meta name="google" content="notranslate" />
-
-  <title>F-CAFE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- REMOVE any old tailwind *.css link and add this exactly -->
-<script src="https://cdn.tailwindcss.com"></script>
-
+  <style>
+    .notranslate{ translate:no; }
+    .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.7); }
+  </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900" translate="no">
-  <main class="max-w-3xl mx-auto p-4">
-    <header class="mb-4">
-      <h1 class="text-2xl font-bold">Đặt hàng giao tận nơi</h1>
-      <p class="text-sm text-neutral-600">Chọn món, nhập địa chỉ, xác nhận đơn.</p>
+  <div class="relative isolate">
+    <!-- Gradient header -->
+    <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 opacity-60">
+      <div class="h-56 bg-gradient-to-br from-amber-200 via-rose-200 to-sky-200"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="max-w-5xl mx-auto px-4 pt-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-black/90 text-white grid place-items-center font-bold">C</div>
+          <div>
+            <h1 class="text-2xl font-bold notranslate">CAFE — CACAO</h1>
+            <p id="sub" class="text-sm text-neutral-600">Đặt món giao tận nơi</p>
+          </div>
+        </div>
+        <!-- Language toggle -->
+        <div class="glass rounded-xl px-2 py-1 shadow border border-white/40">
+          <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium">VI</button>
+          <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium">EN</button>
+        </div>
+      </div>
+
+      <!-- Search + category bar -->
+      <div class="mt-5 flex flex-col gap-3 md:flex-row md:items-center">
+        <div class="relative flex-1">
+          <input id="search" placeholder="Tìm món… / Search…"
+                 class="w-full rounded-xl border border-neutral-300 bg-white/70 px-4 py-2 outline-none focus:ring-2 focus:ring-black/20" />
+          <span class="absolute right-3 top-2.5 text-neutral-400">⌘K</span>
+        </div>
+        <div class="overflow-x-auto hide-scrollbar">
+          <div id="tabs" class="flex gap-2"></div>
+        </div>
+      </div>
     </header>
 
-    <!-- MENU -->
-    <section id="menu" class="grid grid-cols-1 gap-3"></section>
+    <!-- Main -->
+    <main class="max-w-5xl mx-auto px-4 pb-24 mt-6 grid md:grid-cols-[1fr_360px] gap-6">
+      <!-- MENU LIST -->
+      <section>
+        <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        <div id="empty" class="hidden text-center text-neutral-500 py-16">Không có món phù hợp / No items</div>
+      </section>
 
-    <!-- CART -->
-    <section class="mt-6 p-4 bg-white rounded-xl shadow">
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold">Giỏ hàng</h2>
-        <button id="clearCart" class="text-sm underline">Xoá giỏ</button>
-      </div>
-      <div id="cart" class="mt-2"></div>
-      <div class="mt-2 flex justify-between font-medium">
-        <span>Tổng tạm</span>
-        <span id="subtotal">0 đ</span>
-      </div>
-    </section>
+      <!-- CART + CHECKOUT -->
+      <aside class="md:sticky md:top-4 h-max">
+        <div class="p-4 rounded-2xl bg-white shadow border">
+          <h2 id="cartTitle" class="text-lg font-semibold">Giỏ hàng</h2>
+          <div id="cart" class="mt-3 grid gap-2"></div>
 
-    <!-- DELIVERY & CHECKOUT -->
-    <section class="mt-6 p-4 bg-white rounded-xl shadow">
-      <h2 class="font-semibold mb-2">Thông tin giao hàng</h2>
-      <form id="checkoutForm" class="grid gap-3">
-        <input name="name" placeholder="Họ tên" class="border p-2 rounded" required />
-        <input name="phone" placeholder="SĐT (ví dụ 09xxxxxxxx)" class="border p-2 rounded" required />
-        <input name="street" placeholder="Số nhà, đường" class="border p-2 rounded" required />
-        <div class="grid grid-cols-3 gap-2">
-          <input name="ward" placeholder="Phường/Xã" class="border p-2 rounded" required />
-          <input name="district" placeholder="Quận/Huyện" class="border p-2 rounded" required />
-          <input name="province" placeholder="Tỉnh/TP" class="border p-2 rounded" required />
+          <div class="mt-3 border-t pt-3 text-sm">
+            <div class="flex justify-between"><span>Tổng tạm / Subtotal</span><span id="subtotal">0 đ</span></div>
+            <div class="flex justify-between"><span>Phí giao / Delivery</span><span id="delivery">0 đ</span></div>
+            <div class="flex justify-between font-semibold text-base mt-1">
+              <span>Tổng / Total</span><span id="total">0 đ</span>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h3 id="deliveryTitle" class="font-semibold">Thông tin giao hàng</h3>
+            <form id="checkoutForm" class="mt-2 grid gap-2">
+              <input name="name" placeholder="Họ tên / Name" class="border p-2 rounded-lg" required />
+              <input name="phone" placeholder="SĐT (09xxxx) / Phone" class="border p-2 rounded-lg" required />
+              <input name="street" placeholder="Số nhà, đường / Street" class="border p-2 rounded-lg" required />
+              <div class="grid grid-cols-3 gap-2">
+                <input name="ward" placeholder="Phường / Ward" class="border p-2 rounded-lg" required />
+                <input name="district" placeholder="Quận / District" class="border p-2 rounded-lg" required />
+                <input name="province" placeholder="Tỉnh / Province" class="border p-2 rounded-lg" required />
+              </div>
+              <textarea name="note" placeholder="Ghi chú / Note (optional)" class="border p-2 rounded-lg"></textarea>
+              <label class="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="consent"/>
+                <span>Đồng ý nhận khuyến mãi / I agree to receive promotions</span>
+              </label>
+              <button class="mt-1 bg-black text-white w-full py-2 rounded-xl font-medium">Đặt hàng / Place order</button>
+            </form>
+            <p id="resultMsg" class="mt-3 hidden text-green-700 font-medium">Đã đặt hàng! / Order placed!</p>
+          </div>
         </div>
-        <textarea name="note" placeholder="Ghi chú giao hàng (tuỳ chọn)" class="border p-2 rounded"></textarea>
-        <label class="inline-flex items-center gap-2">
-          <input type="checkbox" name="consent" />
-          <span>Tôi đồng ý nhận khuyến mãi qua SMS/Email</span>
-        </label>
-        <button class="bg-black text-white px-4 py-2 rounded">Đặt hàng</button>
-      </form>
-      <p id="resultMsg" class="mt-3 text-green-700 font-medium hidden">Đã đặt hàng! Cảm ơn bạn.</p>
-    </section>
-  </main>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-5 hidden px-4 py-2 rounded-xl bg-black text-white shadow"></div>
 
 <script>
-/** ====== CONFIG (REPLACE THESE TWO LINES) ====== **/
-const SUPABASE_URL = 'https://peenohpyubshzxgzzkhx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
-/** ============================================== **/
+/** ===== CONFIG: replace with your values ===== **/
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+/** =========================================== **/
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const state = { cart: [] };
 
-function money(v){ return (v).toLocaleString('vi-VN') + ' đ'; }
+// i18n strings
+const STR = {
+  vi: {
+    sub: "Đặt món giao tận nơi",
+    cart: "Giỏ hàng",
+    deliveryInfo: "Thông tin giao hàng",
+    add: "Thêm",
+    qty: "SL",
+    remove: "Xoá",
+    empty: "Không có món phù hợp",
+    placed: "Đã đặt hàng! Cảm ơn bạn.",
+    search: "Tìm món…",
+  },
+  en: {
+    sub: "Order home delivery",
+    cart: "Cart",
+    deliveryInfo: "Delivery details",
+    add: "Add",
+    qty: "Qty",
+    remove: "Remove",
+    empty: "No matching items",
+    placed: "Order placed! Thank you.",
+    search: "Search items…",
+  }
+};
 
-async function loadMenu(){
-  const { data, error } = await sb.from('products')
-    .select('*')
-    .eq('is_active', true)
-    .order('category', { ascending: true });
-  if(error){ alert('Không tải được menu'); return; }
+let lang = localStorage.getItem('lang') || 'vi';
+const state = { products: [], filtered: [], cart: [], cats: [], catActive: 'ALL', deliveryFee: 0 };
 
-  // group by category
-  const groups = data.reduce((acc,p)=>{
-    (acc[p.category] ||= []).push(p);
-    return acc;
-  },{});
+// Helpers
+const money = (v)=> (v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US') + (lang==='vi' ? ' đ' : ' VND');
+const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1500); };
 
-  const container = document.getElementById('menu');
-  container.innerHTML = '';
-  Object.entries(groups).forEach(([cat, items])=>{
-    const sec = document.createElement('div');
-    sec.className = 'bg-white rounded-xl shadow';
-    sec.innerHTML = `
-      <div class="px-4 py-3 border-b font-semibold">${cat}</div>
-      <div class="p-3 grid gap-2"></div>
-    `;
-    const list = sec.querySelector('div.grid');
-    items.forEach(p=>{
-      const row = document.createElement('div');
-      row.className = 'flex items-center justify-between';
-      row.innerHTML = `
-        <div>
-          <div class="font-medium">${p.name_vi || p.name}</div>
-          <div class="text-sm text-neutral-500">${money(p.price)}</div>
+function t(key){ return STR[lang][key]; }
+
+function syncTexts(){
+  document.getElementById('sub').textContent = t('sub');
+  document.getElementById('cartTitle').textContent = t('cart');
+  document.getElementById('deliveryTitle').textContent = t('deliveryInfo');
+  document.getElementById('search').placeholder = STR[lang].search;
+}
+
+document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem('lang','vi'); renderAll(); };
+document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); renderAll(); };
+
+function buildTabs(){
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  const mk = (val,label)=>{
+    const b=document.createElement('button');
+    b.className='px-3 py-1.5 rounded-lg text-sm bg-white/80 border hover:bg-white';
+    b.textContent=label;
+    if(state.catActive===val) b.classList.add('ring-1','ring-black/20','font-semibold');
+    b.onclick=()=>{ state.catActive=val; filter(); renderMenu(); highlightTabs(); };
+    return b;
+  };
+  tabs.appendChild(mk('ALL','All'));
+  state.cats.forEach(c=> tabs.appendChild(mk(c,c)));
+}
+
+function highlightTabs(){
+  const tabs = document.getElementById('tabs').children;
+  [...tabs].forEach(b=>{
+    b.classList.remove('ring-1','ring-black/20','font-semibold');
+    if(b.textContent===state.catActive || (state.catActive==='ALL' && b.textContent==='All')){
+      b.classList.add('ring-1','ring-black/20','font-semibold');
+    }
+  });
+}
+
+function filter(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let arr = state.products;
+  if(state.catActive!=='ALL') arr = arr.filter(p=>p.category===state.catActive);
+  if(q) arr = arr.filter(p => (p.name||'').toLowerCase().includes(q) || (p.name_vi||'').toLowerCase().includes(q));
+  state.filtered = arr;
+  document.getElementById('empty').classList.toggle('hidden', arr.length>0);
+}
+
+function renderMenu(){
+  const wrap = document.getElementById('menu');
+  wrap.innerHTML = '';
+  state.filtered.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl bg-white shadow border overflow-hidden hover:shadow-lg transition-shadow';
+    card.innerHTML = `
+      <div class="p-3 flex items-start gap-3">
+        <div class="flex-1">
+          <div class="font-semibold leading-snug notranslate">${lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi)}</div>
+          <div class="text-sm text-neutral-500 mt-0.5">${p.category}</div>
+          <div class="mt-2 font-semibold">${money(p.price)}</div>
         </div>
-        <button class="px-3 py-1 bg-neutral-900 text-white rounded">Thêm</button>
-      `;
-      row.querySelector('button').onclick = ()=>{
-        const f = state.cart.find(i=>i.id===p.id);
-        if(f) f.qty += 1;
-        else state.cart.push({ id:p.id, name:p.name_vi||p.name, price:p.price, qty:1 });
-        renderCart();
-      };
-      list.appendChild(row);
-    });
-    container.appendChild(sec);
+        ${p.image_url ? `<img src="${p.image_url}" alt="" class="w-20 h-20 object-cover rounded-xl border">` : ''}
+      </div>
+      <div class="p-3 pt-0">
+        <button class="w-full rounded-xl bg-black text-white py-2 text-sm font-medium">${t('add')}</button>
+      </div>
+    `;
+    card.querySelector('button').onclick = ()=>{
+      const f=state.cart.find(i=>i.id===p.id);
+      if(f) f.qty++;
+      else state.cart.push({id:p.id, name: (p.name_vi||p.name), name_en:(p.name||p.name_vi), price:p.price, qty:1});
+      renderCart();
+      toast(lang==='vi'?'Đã thêm vào giỏ':'Added to cart');
+    };
+    wrap.appendChild(card);
   });
 }
 
 function renderCart(){
-  const wrap = document.getElementById('cart');
-  wrap.innerHTML = '';
-  let sum = 0;
+  const c = document.getElementById('cart');
+  c.innerHTML = '';
+  let sub=0;
   state.cart.forEach((i, idx)=>{
-    sum += i.price*i.qty;
+    sub += i.price*i.qty;
     const row = document.createElement('div');
-    row.className = 'flex items-center justify-between py-1';
+    row.className = 'flex items-center justify-between bg-neutral-50 rounded-lg p-2';
+    const nameShow = lang==='vi' ? i.name : (i.name_en || i.name);
     row.innerHTML = `
-      <span>${i.name} × ${i.qty}</span>
+      <div class="min-w-0">
+        <div class="truncate font-medium">${nameShow}</div>
+        <div class="text-sm text-neutral-500">${money(i.price)}</div>
+      </div>
       <div class="flex items-center gap-2">
-        <button class="px-2 py-0.5 border rounded" data-idx="${idx}" data-op="-">-</button>
-        <button class="px-2 py-0.5 border rounded" data-idx="${idx}" data-op="+">+</button>
-        <span>${money(i.price*i.qty)}</span>
+        <button class="w-6 h-6 grid place-items-center border rounded" data-op="-" data-idx="${idx}">−</button>
+        <span class="w-6 text-center">${i.qty}</span>
+        <button class="w-6 h-6 grid place-items-center border rounded" data-op="+" data-idx="${idx}">+</button>
+        <button class="text-xs px-2 py-1 border rounded" data-op="x" data-idx="${idx}">${t('remove')}</button>
       </div>
     `;
-    wrap.appendChild(row);
+    c.appendChild(row);
   });
-  wrap.querySelectorAll('button').forEach(btn=>{
-    btn.onclick = ()=>{
-      const idx = +btn.dataset.idx;
-      const op = btn.dataset.op;
-      if(op==='-' && state.cart[idx].qty>1) state.cart[idx].qty -= 1;
-      else if(op==='+' ) state.cart[idx].qty += 1;
+
+  c.querySelectorAll('button').forEach(b=>{
+    const idx=+b.dataset.idx; const op=b.dataset.op;
+    b.onclick=()=>{
+      if(op==='-' && state.cart[idx].qty>1) state.cart[idx].qty--;
+      else if(op==='+') state.cart[idx].qty++;
+      else if(op==='x') state.cart.splice(idx,1);
       renderCart();
     };
   });
-  document.getElementById('subtotal').textContent = money(sum);
+
+  document.getElementById('subtotal').textContent = money(sub);
+  document.getElementById('delivery').textContent = money(state.deliveryFee);
+  document.getElementById('total').textContent = money(sub + state.deliveryFee);
 }
 
-document.getElementById('clearCart').onclick = ()=>{
-  state.cart = [];
+function renderAll(){
+  syncTexts();
+  filter();
+  renderMenu();
   renderCart();
-};
+  buildTabs();
+  highlightTabs();
+}
 
+async function loadMenu(){
+  const { data, error } = await sb.from('products').select('*').eq('is_active', true).order('category');
+  if(error){ alert('Không tải được menu / Failed to load menu'); return; }
+  state.products = data || [];
+  state.cats = [...new Set(state.products.map(p=>p.category))];
+  state.catActive = 'ALL';
+  renderAll();
+}
+
+// Search & keyboard shortcut
+document.getElementById('search').addEventListener('input', ()=>{ filter(); renderMenu(); });
+document.addEventListener('keydown',(e)=>{
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){
+    e.preventDefault(); document.getElementById('search').focus();
+  }
+});
+
+// Checkout
 document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  if(state.cart.length===0){ alert('Giỏ hàng trống'); return; }
+  if(state.cart.length===0){ return toast(lang==='vi'?'Giỏ hàng trống':'Cart is empty'); }
 
   const fd = new FormData(e.target);
   const name = fd.get('name').trim();
@@ -162,64 +296,48 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
   const note = (fd.get('note')||'').trim();
   const consent = !!fd.get('consent');
 
-  // 1) Upsert customer (insert, or fetch by phone if unique violation)
-  let { data: cRow, error: cErr } = await sb.from('customers')
-    .insert({ name, phone })
-    .select('id')
-    .single();
+  // 1) Customer upsert-ish
+  let { data: cRow, error: cErr } = await sb.from('customers').insert({ name, phone }).select('id').single();
   if(cErr && String(cErr.message).includes('duplicate key')){
     const { data: existing } = await sb.from('customers').select('id').eq('phone', phone).single();
     cRow = existing;
-  } else if(cErr) {
-    alert('Lỗi khi lưu khách hàng');
-    return;
-  }
+  } else if(cErr) { return toast('Lỗi khách hàng / Customer error'); }
 
-  // 2) Consent (optional)
+  // 2) Consent
   if(consent){
     await sb.from('marketing_consents').insert({
-      customer_id: cRow.id,
-      consent: true,
-      channel: 'sms',
-      source: 'checkout'
+      customer_id: cRow.id, consent: true, channel: 'sms', source: 'checkout'
     });
   }
 
-  // 3) Create order + items
+  // 3) Order + items
   const addressSnapshot = { name, phone, street, ward, district, province, note };
   const subtotal = state.cart.reduce((a,i)=>a+i.price*i.qty,0);
-  const delivery_fee = 0;
+  const delivery_fee = state.deliveryFee;
   const total = subtotal + delivery_fee;
 
   const { data: order, error: oErr } = await sb.from('orders')
-    .insert({
-      customer_id: cRow.id,
-      address_snapshot: addressSnapshot,
-      subtotal, delivery_fee, total, status: 'pending',
-      note
-    })
+    .insert({ customer_id: cRow.id, address_snapshot: addressSnapshot, subtotal, delivery_fee, total, status: 'pending', note })
     .select('id')
     .single();
-  if(oErr){ alert('Lỗi tạo đơn hàng'); return; }
+  if(oErr) return toast('Lỗi tạo đơn / Order error');
 
-  const items = state.cart.map(i=>({
-    order_id: order.id,
-    product_id: i.id,
-    name: i.name,
-    unit_price: i.price,
-    qty: i.qty
-  }));
+  const items = state.cart.map(i=>({ order_id: order.id, product_id: i.id, name: i.name, unit_price: i.price, qty: i.qty }));
   const { error: iErr } = await sb.from('order_items').insert(items);
-  if(iErr){ alert('Lỗi lưu món'); return; }
+  if(iErr) return toast('Lỗi lưu món / Items error');
 
-  // 4) Reset UI
-  state.cart = [];
-  renderCart();
+  state.cart = []; renderCart();
   e.target.reset();
-  document.getElementById('resultMsg').classList.remove('hidden');
+  const msg = document.getElementById('resultMsg');
+  msg.textContent = t('placed');
+  msg.classList.remove('hidden');
+  setTimeout(()=>msg.classList.add('hidden'), 2500);
 });
 
+// Init
+syncTexts();
 loadMenu();
+
 </script>
 </body>
 </html>
