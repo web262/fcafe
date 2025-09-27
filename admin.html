@@ -146,11 +146,13 @@ function render(orders) {
           <div class="text-neutral-600 text-sm">Delivery: ${money(o.delivery_fee)}</div>
           <div class="font-semibold text-lg mt-1">Total: ${money(o.total)}</div>
           <div class="mt-1 inline-block text-xs px-2 py-1 rounded bg-neutral-100 border">${o.status}</div>
-          <div class="no-print mt-2 flex gap-2 justify-end">
+          <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
             <button class="px-3 py-1 rounded-lg border bg-white" data-act="copy">Copy address</button>
             <a class="px-3 py-1 rounded-lg border bg-white" target="_blank"
                href="https://www.google.com/maps/search/${encodeURIComponent(addrStr)}">Map</a>
             <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">Print receipt</button>
+            <button class="px-3 py-1 rounded-lg border bg-white" data-act="set:paid">Mark Paid</button>
+            <button class="px-3 py-1 rounded-lg border bg-white" data-act="set:delivered">Delivered</button>
           </div>
         </div>
       </div>
@@ -162,13 +164,20 @@ function render(orders) {
 
     // actions
     card.querySelectorAll('[data-act]').forEach(btn=>{
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const act = btn.dataset.act;
         if (act === 'copy') {
-          navigator.clipboard.writeText(addrStr).then(()=>btn.textContent='Copied!');
-          setTimeout(()=>btn.textContent='Copy address',1200);
+          await navigator.clipboard.writeText(addrStr);
+          btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy address',1200);
         } else if (act === 'print') {
           printReceipt(o);
+        } else if (act?.startsWith('set:')) {
+          const newStatus = act.split(':')[1];
+          btn.disabled = true;
+          const { error } = await sb.from('orders').update({ status: newStatus }).eq('id', o.id);
+          btn.disabled = false;
+          if (error) { alert('Failed to update status'); console.error(error); }
+          else load();
         }
       };
     });
@@ -234,13 +243,11 @@ function printReceipt(o){
   `);
   wnd.document.close();
   wnd.focus();
-  // auto print after load
   wnd.onload = () => wnd.print();
 }
 
 /* ---- Export CSV with all checkout details + items string ---- */
 document.getElementById('exportOrders').onclick = async ()=>{
-  // pull orders + customers + items + consent (like load)
   const { data: orders, error: oErr } = await sb.from('orders')
     .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
     .order('created_at', { ascending:false });
