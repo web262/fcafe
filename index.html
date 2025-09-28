@@ -3,392 +3,237 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Café Delivery</title>
-  <meta name="google" content="notranslate" />
+  <title>CAFE — CACAO | Home</title>
+  <meta name="description" content="Café, đồ uống và đồ ăn giao tận nơi. Order nhanh với CAFE — CACAO." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Verdana%2CArial%22>C</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* Global polish */
-    html,body{max-width:100%;overflow-x:hidden}
-    body{padding-bottom:env(safe-area-inset-bottom)}
+    .glass{backdrop-filter:saturate(120%) blur(8px)}
+    .card{transition:transform .15s ease, box-shadow .15s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 12px 24px rgba(0,0,0,.08)}
+    .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.05), 0 8px 32px rgba(0,0,0,.06)}
     .notranslate{ translate:no; }
-    .hide-scrollbar{ scrollbar-width:none; } .hide-scrollbar::-webkit-scrollbar{ display:none; }
-    .card { transition: box-shadow .18s, transform .18s; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
-    .ph { background: linear-gradient(145deg,#f5f5f5,#ececec); }
-    .chip-cat{white-space:nowrap}
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900 overflow-x-hidden" translate="no">
-
-  <!-- Top gradient -->
+  <!-- Top gradient background -->
   <div class="pointer-events-none absolute inset-0 -z-10">
-    <div class="h-56 w-full bg-gradient-to-br from-amber-100 via-rose-100 to-sky-100"></div>
+    <div class="h-[26rem] w-full bg-gradient-to-br from-amber-100 via-rose-100 to-sky-100"></div>
   </div>
 
-  <!-- Header -->
-  <header class="max-w-7xl mx-auto px-3 sm:px-4 pt-6">
-    <div class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">C</div>
+  <!-- NAV -->
+  <header class="sticky top-0 z-40 backdrop-blur bg-white/70 border-b">
+    <div class="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="./" class="flex items-center gap-2">
+        <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
         <div>
-          <h1 class="text-2xl font-bold notranslate">CAFE — CACAO</h1>
-          <p id="sub" class="text-sm text-neutral-600">Đặt món giao tận nơi</p>
+          <div class="font-semibold tracking-wide notranslate">CAFE — CACAO</div>
+          <div id="sub_small" class="text-xs text-neutral-500">Đặt món giao tận nơi</div>
         </div>
-      </div>
+      </a>
 
-      <!-- Language -->
-      <div class="rounded-xl px-1 py-1 shadow bg-white/70 border backdrop-blur">
-        <button id="btnVI" class="px-3 py-1 rounded-lg text-sm font-medium">VI</button>
-        <button id="btnEN" class="px-3 py-1 rounded-lg text-sm font-medium">EN</button>
-      </div>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a class="hover:opacity-80" href="#about">Giới thiệu</a>
+        <a class="hover:opacity-80" href="#menu">Menu</a>
+        <a class="hover:opacity-80" href="#visit">Địa chỉ</a>
+      </nav>
 
-      <!-- Quick contact (desktop, collapses below) -->
-      <div class="hidden sm:flex items-center gap-2 text-sm">
-        <a href="https://zalo.me/0982319886" target="_blank" rel="noopener"
-           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9l-4 4v-4H7a3 3 0 0 1-3-3V5Z" stroke="currentColor" stroke-width="1.5"/></svg>
-          Zalo: 0982319886
-        </a>
-        <a href="tel:0982319886"
-           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.5"/></svg>
-          Call
-        </a>
-        <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" rel="noopener"
-           class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-white/80 hover:bg-white">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h3l1-4h-4V7c0-1.1.9-2 2-2h2V2h-3a5 5 0 0 0-5 5v3H6v4h3v8h4Z"/></svg>
-          Facebook
-        </a>
-      </div>
-    </div>
-
-    <!-- Search + mobile chips -->
-    <div class="mt-5">
-      <div class="relative">
-        <input id="search" placeholder="Tìm món… / Search…"
-               class="w-full rounded-2xl border border-neutral-300 bg-white/70 px-4 py-2 outline-none focus:ring-2 focus:ring-black/20" />
-        <span class="absolute right-3 top-2.5 text-neutral-400 hidden sm:block">⌘K</span>
-      </div>
-
-      <!-- Mobile category chips with edge gradients -->
-      <div class="mt-3 md:hidden">
-        <div class="relative -mx-3 px-3">
-          <div class="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-neutral-50 to-transparent"></div>
-          <div class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-neutral-50 to-transparent"></div>
-          <div id="chipsMobile" class="flex gap-2 overflow-x-auto hide-scrollbar snap-x snap-mandatory"></div>
+      <div class="flex items-center gap-2">
+        <a href="order.html" class="hidden sm:inline-flex bg-black text-white px-3 py-1.5 rounded-lg text-sm">Đặt hàng / Order</a>
+        <div class="rounded-xl px-1 py-1 bg-white border glass">
+          <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium">VI</button>
+          <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium">EN</button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="max-w-7xl mx-auto px-3 sm:px-4 pb-28 mt-4 grid grid-cols-1 lg:grid-cols-[240px_1fr_380px] gap-5">
-
-    <!-- Sidebar categories (desktop) -->
-    <aside class="hidden md:block md:sticky md:top-4 h-max">
-      <div class="rounded-2xl bg-white border shadow p-3">
-        <h3 class="font-semibold mb-2">Danh mục / Categories</h3>
-        <div id="cats" class="grid gap-2"></div>
-      </div>
-    </aside>
-
-    <!-- MENU GRID -->
-    <section>
-      <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
-      <div id="empty" class="hidden text-center text-neutral-500 py-16">Không có món phù hợp / No items</div>
-    </section>
-
-    <!-- CART + CHECKOUT -->
-    <aside class="md:sticky md:top-4">
-      <div class="p-5 rounded-2xl bg-white shadow border
-                  max-h-[calc(100svh-2rem)] overflow-y-auto overflow-x-hidden pr-2">
-        <h2 id="cartTitle" class="text-lg font-semibold">Giỏ hàng</h2>
-        <div id="cart" class="mt-3 grid gap-2"></div>
-
-        <div class="mt-3 border-t pt-3 text-sm space-y-1">
-          <div class="flex justify-between"><span>Tổng tạm / Subtotal</span><span id="subtotal">0 đ</span></div>
-          <div class="flex justify-between"><span>Phí giao / Delivery</span><span id="delivery">0 đ</span></div>
-          <div class="flex justify-between font-semibold text-base pt-1">
-            <span>Tổng / Total</span><span id="total">0 đ</span>
-          </div>
+  <!-- HERO -->
+  <section class="max-w-screen-xl mx-auto px-4 pt-10">
+    <div class="grid lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <h1 id="hero_title" class="text-4xl sm:text-5xl font-extrabold leading-tight">
+          CAFE — CACAO<br><span class="text-neutral-600 font-medium">Cà phê ngon, giao nhanh</span>
+        </h1>
+        <p id="hero_sub" class="mt-4 text-neutral-600 text-lg">
+          Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.
+        </p>
+        <div class="mt-6 flex gap-3">
+          <a href="order.html" class="bg-black text-white px-5 py-3 rounded-xl font-medium">Đặt hàng ngay</a>
+          <a href="#menu" class="px-5 py-3 rounded-xl font-medium border bg-white">Xem menu</a>
         </div>
 
-        <div class="mt-4">
-          <h3 id="deliveryTitle" class="font-semibold">Thông tin giao hàng</h3>
-          <form id="checkoutForm" class="mt-2 grid gap-2">
-            <input name="name" placeholder="Họ tên / Name" class="border p-2 rounded-lg" required />
-            <input name="phone" placeholder="SĐT (09xxxx) / Phone" class="border p-2 rounded-lg" required />
-            <input name="street" placeholder="Số nhà, đường / Street" class="border p-2 rounded-lg" required />
-            <div class="grid grid-cols-3 gap-2">
-              <input name="ward" placeholder="Phường / Ward" class="border p-2 rounded-lg" required />
-              <input name="district" placeholder="Quận / District" class="border p-2 rounded-lg" required />
-              <input name="province" placeholder="Tỉnh / Province" class="border p-2 rounded-lg" required />
-            </div>
-            <textarea name="note" placeholder="Ghi chú / Note (optional)" class="border p-2 rounded-lg"></textarea>
-            <label class="inline-flex items-center gap-2 text-sm">
-              <input type="checkbox" name="consent"/>
-              <span>Đồng ý nhận khuyến mãi / I agree to receive promotions</span>
-            </label>
-            <button class="mt-1 bg-black text-white w-full py-2.5 rounded-xl font-medium">Đặt hàng / Place order</button>
-          </form>
-          <p id="resultMsg" class="mt-3 hidden text-green-700 font-medium">Đã đặt hàng! / Order placed!</p>
+        <!-- Quick contacts -->
+        <div class="mt-6 flex flex-wrap gap-2 text-sm">
+          <a href="https://zalo.me/0982319886" target="_blank" class="px-3 py-1.5 rounded-lg border bg-white">Zalo: 0982319886</a>
+          <a href="tel:0982319886" class="px-3 py-1.5 rounded-lg border bg-white">Gọi / Call</a>
+          <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="px-3 py-1.5 rounded-lg border bg-white">Facebook</a>
         </div>
       </div>
-    </aside>
-  </main>
 
-  <!-- Toast -->
-  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-5 hidden px-4 py-2 rounded-xl bg-black text-white shadow"></div>
+      <div class="rounded-3xl bg-white border shadow-soft p-4">
+        <img class="rounded-2xl w-full object-cover h-72"
+             src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop"
+             alt="Coffee and pastries" />
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOD vs DRINKS tiles -->
+  <section id="menu" class="max-w-screen-xl mx-auto px-4 mt-12">
+    <h2 id="sec_menu" class="text-2xl font-bold mb-4">Danh mục</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <a href="order.html?section=FOOD" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
+        <div class="h-12 w-12 rounded-xl bg-amber-500/10 grid place-items-center">🍜</div>
+        <div>
+          <div class="text-lg font-semibold">Đồ ăn / Food</div>
+          <div class="text-neutral-600 text-sm">Mì tôm, bánh mì, xôi, ăn vặt, đồ thêm</div>
+        </div>
+      </a>
+      <a href="order.html?section=DRINKS" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
+        <div class="h-12 w-12 rounded-xl bg-sky-500/10 grid place-items-center">🥤</div>
+        <div>
+          <div class="text-lg font-semibold">Đồ uống / Drinks</div>
+          <div class="text-neutral-600 text-sm">Cà phê, Lipton Tea, Cacao & Matcha…</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Highlights (pull a few from Supabase) -->
+  <section class="max-w-screen-xl mx-auto px-4 mt-10">
+    <h3 id="sec_high" class="text-xl font-semibold mb-3">Món nổi bật / Highlights</h3>
+    <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- About / Hours -->
+  <section id="about" class="max-w-screen-xl mx-auto px-4 mt-14 grid lg:grid-cols-2 gap-8">
+    <div class="rounded-2xl bg-white border shadow-soft p-6">
+      <h3 class="text-xl font-semibold mb-2">Về chúng tôi / About us</h3>
+      <p class="text-neutral-700 leading-relaxed">
+        CAFE — CACAO phục vụ cà phê pha phin, pha máy, đồ uống chai sẵn và nhiều món ăn nhẹ.
+        Chúng tôi cam kết nguyên liệu chất lượng và giao hàng nhanh chóng.
+      </p>
+      <p class="mt-3 text-neutral-700">
+        Theo dõi Facebook và Zalo để nhận khuyến mãi mới nhất!
+      </p>
+    </div>
+    <div class="rounded-2xl bg-white border shadow-soft p-6">
+      <h3 class="text-xl font-semibold mb-2">Giờ mở cửa / Opening hours</h3>
+      <ul class="text-neutral-700 space-y-1">
+        <li>Mon – Fri: 7:00 – 21:00</li>
+        <li>Sat – Sun: 8:00 – 21:00</li>
+        <li>Hotline: <a class="underline" href="tel:0982319886">0982319886</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Visit -->
+  <section id="visit" class="max-w-screen-xl mx-auto px-4 mt-14 mb-16">
+    <h3 class="text-xl font-semibold mb-3">Địa chỉ / Visit us</h3>
+    <div class="rounded-2xl overflow-hidden border shadow-soft">
+      <!-- Replace with your real place link -->
+      <iframe class="w-full h-72"
+        src="https://www.google.com/maps?q=Hanoi&output=embed"
+        loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </section>
+
+  <footer class="border-t bg-white">
+    <div class="max-w-screen-xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+      <div>© <span id="year"></span> CAFE — CACAO</div>
+      <div class="flex gap-3">
+        <a class="underline" href="order.html">Đặt hàng / Order</a>
+        <a class="underline" href="admin.html">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating contact -->
+  <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <a href="https://zalo.me/0982319886" target="_blank" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Zalo">ZA</a>
+    <a href="tel:0982319886" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Call">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
+    </a>
+    <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="shadow-lg rounded-full bg-[#1877F2] text-white w-12 h-12 grid place-items-center" title="Facebook">f</a>
+  </div>
 
 <script>
-/** ===== CONFIG: replace with your values ===== **/
-const SUPABASE_URL = 'https://peenohpyubshzxgzzkhx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
-/** =========================================== **/
+/* -------- config (same project) ---------- */
+const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// i18n strings
+/* -------- i18n -------- */
 const STR = {
-  vi: { sub:"Đặt món giao tận nơi", cart:"Giỏ hàng", deliveryInfo:"Thông tin giao hàng",
-        add:"Thêm", qty:"SL", remove:"Xoá", empty:"Không có món phù hợp", search:"Tìm món…", cat:"Danh mục" },
-  en: { sub:"Order home delivery", cart:"Cart", deliveryInfo:"Delivery details",
-        add:"Add", qty:"Qty", remove:"Remove", empty:"No matching items", search:"Search…", cat:"Categories" }
+  vi: {
+    sub_small: "Đặt món giao tận nơi",
+    hero_title: "CAFE — CACAO",
+    hero_sub: "Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.",
+    menu: "Danh mục",
+    highlights: "Món nổi bật / Highlights",
+  },
+  en: {
+    sub_small: "Order home delivery",
+    hero_title: "CAFE — CACAO",
+    hero_sub: "Hot & fresh delivery. Order online in seconds.",
+    menu: "Categories",
+    highlights: "Highlights",
+  }
 };
-
 let lang = localStorage.getItem('lang') || 'vi';
-const state = { products: [], filtered: [], cart: [], cats: [], catActive: 'ALL', deliveryFee: 0 };
-
-const money = (v)=> (v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US') + (lang==='vi' ? ' đ' : ' VND');
-const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1500); };
-function t(key){ return STR[lang][key]; }
-function syncTexts(){
-  document.getElementById('sub').textContent = t('sub');
-  document.getElementById('cartTitle').textContent = t('cart');
-  document.getElementById('deliveryTitle').textContent = t('deliveryInfo');
-  document.getElementById('search').placeholder = STR[lang].search;
+function syncLang(){
+  document.getElementById('sub_small').textContent = STR[lang].sub_small;
+  document.getElementById('hero_title').innerHTML = STR[lang].hero_title + "<br><span class='text-neutral-600 font-medium'>" + (lang==='vi'?'Cà phê ngon, giao nhanh':'Great coffee, fast delivery') + "</span>";
+  document.getElementById('hero_sub').textContent = STR[lang].hero_sub;
+  document.getElementById('sec_menu').textContent = STR[lang].menu;
+  document.getElementById('sec_high').textContent = STR[lang].highlights;
 }
+document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem('lang','vi'); syncLang(); };
+document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); syncLang(); };
+syncLang();
 
-document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem('lang','vi'); renderAll(); };
-document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); renderAll(); };
-
-function badge(label, active=false){
-  const b=document.createElement('button');
-  b.className='w-full text-left px-3 py-2 rounded-xl text-sm border bg-white hover:bg-neutral-50 transition';
-  if(active) b.classList.add('ring-2','ring-black','font-semibold');
-  b.textContent = label;
-  return b;
-}
-function chip(label, active=false){
-  const b=document.createElement('button');
-  b.className='chip-cat px-3 py-2 rounded-2xl text-sm bg-white/90 border hover:bg-white snap-start shrink-0 transition';
-  if(active) b.classList.add('ring-2','ring-black','font-semibold');
-  b.textContent = label;
-  return b;
-}
-
-function buildCategories(){
-  const left = document.getElementById('cats');
-  const mobile = document.getElementById('chipsMobile');
-  left.innerHTML = ''; mobile.innerHTML = '';
-  const all = ['All', ...state.cats];
-  all.forEach(label=>{
-    const isActive = (state.catActive==='ALL' && label==='All') || label===state.catActive;
-    const b1 = badge(label, isActive); const b2 = chip(label, isActive);
-    b1.onclick = b2.onclick = ()=>{ state.catActive = (label==='All'?'ALL':label); filter(); renderMenu(); buildCategories(); };
-    left.appendChild(b1); mobile.appendChild(b2);
-  });
-}
-
-function filter(){
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  let arr = state.products;
-  if(state.catActive!=='ALL') arr = arr.filter(p=>p.category===state.catActive);
-  if(q) arr = arr.filter(p => (p.name||'').toLowerCase().includes(q) || (p.name_vi||'').toLowerCase().includes(q));
-  state.filtered = arr;
-  document.getElementById('empty').classList.toggle('hidden', arr.length>0);
-}
-
-function placeholderImg(name){
-  const initials = (name || 'CAFE').split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
-  return `<div class="ph w-full h-36 sm:h-40 grid place-items-center text-neutral-400 font-semibold">${initials}</div>`;
-}
-
-function renderMenu(){
-  const wrap = document.getElementById('menu');
+/* -------- highlights from Supabase -------- */
+async function loadHighlights(){
+  // pick a few active items, any section
+  const { data, error } = await sb.from('products')
+    .select('id,name,name_vi,price,section,category,subgroup,image_url')
+    .eq('is_active', true)
+    .order('created_at', { ascending:false })
+    .limit(6);
+  const wrap = document.getElementById('highlights');
   wrap.innerHTML = '';
-  state.filtered.forEach(p=>{
-    const card = document.createElement('div');
-    card.className = 'card rounded-2xl bg-white shadow border overflow-hidden';
+  if (error || !data?.length){
+    // fallback placeholders
+    wrap.innerHTML = `
+      <div class="rounded-2xl bg-white border p-4">Đen pha phin — 35,000 đ</div>
+      <div class="rounded-2xl bg-white border p-4">Cacao latte — 50,000 đ</div>
+      <div class="rounded-2xl bg-white border p-4">Bánh mì pate — 30,000 đ</div>`;
+    return;
+  }
+  data.forEach(p=>{
     const title = lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi);
-    const subtitle = p.category;
+    const money = (v)=> (v||0).toLocaleString(lang==='vi'?'vi-VN':'en-US') + (lang==='vi'?' đ':' VND');
+    const card = document.createElement('a');
+    const search = new URLSearchParams();
+    if (p.section) search.set('section', p.section);
+    if (p.category) search.set('category', p.category);
+    card.href = 'order.html?'+search.toString();
+    card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden';
     card.innerHTML = `
-      ${p.image_url
-        ? `<img src="${p.image_url}" alt="" class="w-full h-36 sm:h-40 object-cover">`
-        : placeholderImg(title)}
+      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-32 object-cover" alt="">` : `<div class="w-full h-32 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
-        <div class="font-semibold leading-snug notranslate line-clamp-2">${title}</div>
-        <div class="text-xs text-neutral-500 mt-1">${subtitle}</div>
-        <div class="mt-2 text-lg font-semibold">${money(p.price)}</div>
-        <button class="mt-3 w-full rounded-xl bg-black text-white py-2 text-sm font-medium">${t('add')}</button>
-      </div>
-    `;
-    card.querySelector('button').onclick = ()=>{
-      const f=state.cart.find(i=>i.id===p.id);
-      if(f) f.qty++;
-      else state.cart.push({id:p.id, name: (p.name_vi||p.name), name_en:(p.name||p.name_vi), price:p.price, qty:1});
-      renderCart();
-      toast(lang==='vi'?'Đã thêm vào giỏ':'Added to cart');
-    };
+        <div class="font-semibold line-clamp-2">${title}</div>
+        <div class="text-xs text-neutral-500 mt-0.5">${p.section} • ${p.category}${p.subgroup?(' • '+p.subgroup):''}</div>
+        <div class="mt-2 font-semibold">${money(p.price)}</div>
+      </div>`;
     wrap.appendChild(card);
   });
 }
+loadHighlights();
 
-function renderCart(){
-  const c = document.getElementById('cart');
-  c.innerHTML = '';
-  let sub=0;
-  state.cart.forEach((i, idx)=>{
-    sub += i.price*i.qty;
-    const row = document.createElement('div');
-    row.className = 'flex items-center justify-between bg-neutral-50 rounded-lg p-2';
-    const nameShow = lang==='vi' ? i.name : (i.name_en || i.name);
-    row.innerHTML = `
-      <div class="min-w-0">
-        <div class="truncate font-medium">${nameShow}</div>
-        <div class="text-xs text-neutral-500">${money(i.price)}</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="w-7 h-7 grid place-items-center border rounded" data-op="-" data-idx="${idx}">−</button>
-        <span class="w-6 text-center">${i.qty}</span>
-        <button class="w-7 h-7 grid place-items-center border rounded" data-op="+" data-idx="${idx}">+</button>
-        <button class="text-xs px-2 py-1 border rounded" data-op="x" data-idx="${idx}">${t('remove')}</button>
-      </div>
-    `;
-    c.appendChild(row);
-  });
-
-  c.querySelectorAll('button').forEach(b=>{
-    const idx=+b.dataset.idx; const op=b.dataset.op;
-    b.onclick=()=>{
-      if(op==='-' && state.cart[idx].qty>1) state.cart[idx].qty--;
-      else if(op==='+') state.cart[idx].qty++;
-      else if(op==='x') state.cart.splice(idx,1);
-      renderCart();
-    };
-  });
-
-  document.getElementById('subtotal').textContent = money(sub);
-  document.getElementById('delivery').textContent = money(state.deliveryFee);
-  document.getElementById('total').textContent = money(sub + state.deliveryFee);
-}
-
-function renderAll(){
-  syncTexts();
-  filter();
-  renderMenu();
-  renderCart();
-  buildCategories();
-}
-
-async function loadMenu(){
-  const { data, error } = await sb.from('products').select('*').eq('is_active', true).order('category');
-  if(error){ alert('Không tải được menu / Failed to load menu'); console.error(error); return; }
-  state.products = data || [];
-  state.cats = [...new Set(state.products.map(p=>p.category))];
-  state.catActive = 'ALL';
-  renderAll();
-}
-
-// Search & keyboard shortcut
-document.getElementById('search').addEventListener('input', ()=>{ filter(); renderMenu(); });
-document.addEventListener('keydown',(e)=>{
-  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){
-    e.preventDefault(); document.getElementById('search').focus();
-  }
-});
-
-// Checkout
-document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(state.cart.length===0){ return toast(lang==='vi'?'Giỏ hàng trống':'Cart is empty'); }
-
-  const fd = new FormData(e.target);
-  const name = (fd.get('name')||'').trim();
-  const phone = (fd.get('phone')||'').trim();
-  const street = (fd.get('street')||'').trim();
-  const ward = (fd.get('ward')||'').trim();
-  const district = (fd.get('district')||'').trim();
-  const province = (fd.get('province')||'').trim();
-  const note = (fd.get('note')||'').trim();
-  const consent = !!fd.get('consent');
-
-  if(!name || !phone){ return toast(lang==='vi'?'Thiếu tên/SĐT':'Missing name/phone'); }
-
-  // 1) Customer UPSERT by phone (unique index on customers(phone))
-  const { data: cRow, error: cErr } = await sb
-    .from('customers')
-    .upsert({ name, phone }, { onConflict: 'phone' })
-    .select('id')
-    .single();
-  if (cErr) { console.error('Customer error:', cErr); return toast('Lỗi khách hàng / Customer error'); }
-
-  // 2) Consent (non-blocking)
-  if(consent){
-    const { error: mErr } = await sb.from('marketing_consents').insert({
-      customer_id: cRow.id, consent: true, channel: 'sms', source: 'checkout'
-    });
-    if(mErr) console.warn('Consent error (ignored):', mErr);
-  }
-
-  // 3) Order + items
-  const addressSnapshot = { name, phone, street, ward, district, province, note };
-  const subtotal = state.cart.reduce((a,i)=>a+i.price*i.qty,0);
-  const delivery_fee = state.deliveryFee;
-  const total = subtotal + delivery_fee;
-
-  const { data: order, error: oErr } = await sb.from('orders')
-    .insert({ customer_id: cRow.id, address_snapshot: addressSnapshot, subtotal, delivery_fee, total, status: 'pending', note })
-    .select('id')
-    .single();
-  if(oErr){ console.error('Order error:', oErr); return toast('Lỗi tạo đơn / Order error'); }
-
-  const items = state.cart.map(i=>({ order_id: order.id, product_id: i.id, name: i.name, unit_price: i.price, qty: i.qty }));
-  const { error: iErr } = await sb.from('order_items').insert(items);
-  if(iErr){ console.error('Items error:', iErr); return toast('Lỗi lưu món / Items error'); }
-
-  state.cart = []; renderCart();
-  e.target.reset();
-  const msg = document.getElementById('resultMsg');
-  msg.textContent = (lang==='vi' ? 'Đã đặt hàng! Cảm ơn bạn.' : 'Order placed! Thank you.');
-  msg.classList.remove('hidden');
-  setTimeout(()=>msg.classList.add('hidden'), 2500);
-});
-
-// Init
-syncTexts();
-loadMenu();
+document.getElementById('year').textContent = new Date().getFullYear();
 </script>
-
-<!-- Floating contact buttons (mobile-friendly) -->
-<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 sm:hidden">
-  <a href="https://zalo.me/0982319886" target="_blank" rel="noopener"
-     class="shadow-lg rounded-full bg-white border hover:bg-neutral-50 w-12 h-12 grid place-items-center"
-     title="Chat Zalo">
-    <span class="text-[13px] font-semibold">ZA</span>
-  </a>
-  <a href="tel:0982319886"
-     class="shadow-lg rounded-full bg-white border hover:bg-neutral-50 w-12 h-12 grid place-items-center"
-     title="Gọi điện / Call">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
-  </a>
-  <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" rel="noopener"
-     class="shadow-lg rounded-full bg-[#1877F2] text-white hover:opacity-90 w-12 h-12 grid place-items-center"
-     title="Facebook">
-    <span class="text-[16px] font-bold">f</span>
-  </a>
-</div>
-
 </body>
 </html>
