@@ -1,0 +1,12 @@
+// Read URL params to preselect filters (order.html?section=FOOD&category=BREAD)
+const params = new URLSearchParams(location.search);
+const sec = params.get('section');    // e.g., FOOD or DRINKS
+const cat = params.get('category');   // e.g., "Coffee", "Bread" etc.
+
+if (sec) {
+  // If you store section in each product, filter by section in your filter() function
+  state.sectionActive = sec; // add this field to state if you want
+}
+if (cat) {
+  state.catActive = cat; // your page already uses catActive
+}
