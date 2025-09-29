@@ -3,21 +3,45 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CAFE — CACAO | Home</title>
-  <meta name="description" content="Café, đồ uống và đồ ăn giao tận nơi. Order nhanh với CAFE — CACAO." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Verdana%2CArial%22>C</text></svg>">
+  <title>CAFE — CACAO | Cà phê ngon, giao nhanh</title>
+  <meta name="description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi, thanh toán nhanh.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
+
+  <!-- OpenGraph / Twitter -->
+  <meta property="og:title" content="CAFE — CACAO | Cà phê ngon, giao nhanh">
+  <meta property="og:description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"CafeOrCoffeeShop",
+    "name":"CAFE — CACAO",
+    "servesCuisine":["Vietnamese","Coffee","Beverages","Snacks"],
+    "priceRange":"₫",
+    "telephone":"+84-982-319-886",
+    "address":{"@type":"PostalAddress","addressLocality":"Hà Nội","addressCountry":"VN"},
+    "url":"./",
+    "sameAs":["https://www.facebook.com/profile.php?id=100063544271103"]
+  }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .glass{backdrop-filter:saturate(120%) blur(8px)}
-    .card{transition:transform .15s ease, box-shadow .15s ease}
-    .card:hover{transform:translateY(-2px); box-shadow:0 12px 24px rgba(0,0,0,.08)}
+    .glass{backdrop-filter:saturate(120%) blur(10px)}
+    .card{transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 14px 28px rgba(0,0,0,.08)}
     .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.05), 0 8px 32px rgba(0,0,0,.06)}
-    .notranslate{ translate:no; }
+    .fade-in{animation:fade .4s ease both}
+    @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900 overflow-x-hidden" translate="no">
-  <!-- Top gradient background -->
+  <!-- Top gradient -->
   <div class="pointer-events-none absolute inset-0 -z-10">
     <div class="h-[26rem] w-full bg-gradient-to-br from-amber-100 via-rose-100 to-sky-100"></div>
   </div>
@@ -28,7 +52,7 @@
       <a href="./" class="flex items-center gap-2">
         <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
         <div>
-          <div class="font-semibold tracking-wide notranslate">CAFE — CACAO</div>
+          <div class="font-semibold tracking-wide">CAFE — CACAO</div>
           <div id="sub_small" class="text-xs text-neutral-500">Đặt món giao tận nơi</div>
         </div>
       </a>
@@ -54,7 +78,7 @@
     <div class="grid lg:grid-cols-2 gap-8 items-center">
       <div>
         <h1 id="hero_title" class="text-4xl sm:text-5xl font-extrabold leading-tight">
-          CAFE — CACAO<br><span class="text-neutral-600 font-medium">Cà phê ngon, giao nhanh</span>
+          CAFE — CACAO<br><span id="hero_title_sub" class="text-neutral-600 font-medium">Cà phê ngon, giao nhanh</span>
         </h1>
         <p id="hero_sub" class="mt-4 text-neutral-600 text-lg">
           Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.
@@ -80,31 +104,55 @@
     </div>
   </section>
 
-  <!-- FOOD vs DRINKS tiles -->
+  <!-- CATEGORY tiles -->
   <section id="menu" class="max-w-screen-xl mx-auto px-4 mt-12">
     <h2 id="sec_menu" class="text-2xl font-bold mb-4">Danh mục</h2>
     <div class="grid sm:grid-cols-2 gap-4">
-      <a href="order.html?section=FOOD" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
+      <a href="order.html?category=Food" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
         <div class="h-12 w-12 rounded-xl bg-amber-500/10 grid place-items-center">🍜</div>
         <div>
           <div class="text-lg font-semibold">Đồ ăn / Food</div>
-          <div class="text-neutral-600 text-sm">Mì tôm, bánh mì, xôi, ăn vặt, đồ thêm</div>
+          <div class="text-neutral-600 text-sm">Mì gói, bánh mì, xôi, ăn vặt, món kèm</div>
         </div>
       </a>
-      <a href="order.html?section=DRINKS" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
+      <a href="order.html?category=Drinks" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
         <div class="h-12 w-12 rounded-xl bg-sky-500/10 grid place-items-center">🥤</div>
         <div>
           <div class="text-lg font-semibold">Đồ uống / Drinks</div>
-          <div class="text-neutral-600 text-sm">Cà phê, Lipton Tea, Cacao & Matcha…</div>
+          <div class="text-neutral-600 text-sm">Cà phê, Smoothies, Nước ép…</div>
         </div>
       </a>
     </div>
   </section>
 
-  <!-- Highlights (pull a few from Supabase) -->
+  <!-- Highlights -->
   <section class="max-w-screen-xl mx-auto px-4 mt-10">
-    <h3 id="sec_high" class="text-xl font-semibold mb-3">Món nổi bật / Highlights</h3>
-    <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div class="flex items-center justify-between">
+      <h3 id="sec_high" class="text-xl font-semibold mb-3">Món nổi bật</h3>
+      <a href="order.html" class="text-sm underline">Xem tất cả</a>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div id="highlights_skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="rounded-2xl bg-white border p-4 animate-pulse">
+        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+        <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+      </div>
+      <div class="rounded-2xl bg-white border p-4 animate-pulse">
+        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+        <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+      </div>
+      <div class="rounded-2xl bg-white border p-4 animate-pulse">
+        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+        <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+      </div>
+    </div>
+
+    <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+    <div id="highlights_error" class="hidden mt-3 text-sm text-red-600"></div>
   </section>
 
   <!-- About / Hours -->
@@ -112,7 +160,7 @@
     <div class="rounded-2xl bg-white border shadow-soft p-6">
       <h3 class="text-xl font-semibold mb-2">Về chúng tôi / About us</h3>
       <p class="text-neutral-700 leading-relaxed">
-        CAFE — CACAO phục vụ cà phê pha phin, pha máy, đồ uống chai sẵn và nhiều món ăn nhẹ.
+        CAFE — CACAO phục vụ cà phê pha phin, đồ uống chai sẵn và nhiều món ăn nhẹ.
         Chúng tôi cam kết nguyên liệu chất lượng và giao hàng nhanh chóng.
       </p>
       <p class="mt-3 text-neutral-700">
@@ -133,7 +181,6 @@
   <section id="visit" class="max-w-screen-xl mx-auto px-4 mt-14 mb-16">
     <h3 class="text-xl font-semibold mb-3">Địa chỉ / Visit us</h3>
     <div class="rounded-2xl overflow-hidden border shadow-soft">
-      <!-- Replace with your real place link -->
       <iframe class="w-full h-72"
         src="https://www.google.com/maps?q=Hanoi&output=embed"
         loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -153,39 +200,44 @@
   <!-- Floating contact -->
   <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
     <a href="https://zalo.me/0982319886" target="_blank" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Zalo">ZA</a>
-    <a href="tel:0982319886" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Call">
+    <a href="tel:0982319886" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Call" aria-label="Call">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
     </a>
     <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="shadow-lg rounded-full bg-[#1877F2] text-white w-12 h-12 grid place-items-center" title="Facebook">f</a>
   </div>
 
 <script>
-/* -------- config (same project) ---------- */
+/* ================== CONFIG ================== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* -------- i18n -------- */
+/* ================== i18n ================== */
 const STR = {
   vi: {
     sub_small: "Đặt món giao tận nơi",
     hero_title: "CAFE — CACAO",
+    hero_title_sub: "Cà phê ngon, giao nhanh",
     hero_sub: "Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.",
     menu: "Danh mục",
-    highlights: "Món nổi bật / Highlights",
+    highlights: "Món nổi bật",
+    view_all: "Xem tất cả"
   },
   en: {
     sub_small: "Order home delivery",
     hero_title: "CAFE — CACAO",
+    hero_title_sub: "Great coffee, fast delivery",
     hero_sub: "Hot & fresh delivery. Order online in seconds.",
     menu: "Categories",
     highlights: "Highlights",
+    view_all: "View all"
   }
 };
 let lang = localStorage.getItem('lang') || 'vi';
 function syncLang(){
   document.getElementById('sub_small').textContent = STR[lang].sub_small;
-  document.getElementById('hero_title').innerHTML = STR[lang].hero_title + "<br><span class='text-neutral-600 font-medium'>" + (lang==='vi'?'Cà phê ngon, giao nhanh':'Great coffee, fast delivery') + "</span>";
+  document.getElementById('hero_title').firstChild.textContent = STR[lang].hero_title + "\n";
+  document.getElementById('hero_title_sub').textContent = STR[lang].hero_title_sub;
   document.getElementById('hero_sub').textContent = STR[lang].hero_sub;
   document.getElementById('sec_menu').textContent = STR[lang].menu;
   document.getElementById('sec_high').textContent = STR[lang].highlights;
@@ -194,46 +246,68 @@ document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem
 document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); syncLang(); };
 syncLang();
 
-/* -------- highlights from Supabase -------- */
+/* ================== Helpers ================== */
+const moneyK = (v)=> {
+  const n = Number(v||0);
+  if (!n) return lang==='vi' ? '0 đ' : '0 VND';
+  // 30,000 -> "30k"
+  return Math.round(n/1000) + 'k';
+};
+const pickTitle = (row)=> lang==='vi' ? (row.name_vi || row.name_en || '') : (row.name_en || row.name_vi || '');
+
+/* ================== Highlights ================== */
 async function loadHighlights(){
-  // pick a few active items, any section
-  const { data, error } = await sb.from('products')
-    .select('id,name,name_vi,price,section,category,subgroup,image_url')
-    .eq('is_active', true)
-    .order('created_at', { ascending:false })
+  const skel = document.getElementById('highlights_skeleton');
+  const list = document.getElementById('highlights');
+  const err  = document.getElementById('highlights_error');
+  skel.classList.remove('hidden');
+  list.classList.add('hidden');
+  err.classList.add('hidden');
+  err.textContent = '';
+
+  // IMPORTANT: use the schema we agreed on
+  // products(id, slug, category, subcategory, name_vi, name_en, description_vi, price_vnd, size, is_available, image_url, tags, sort_order)
+  const { data, error } = await sb
+    .from('products')
+    .select('id, slug, category, subcategory, name_vi, name_en, price_vnd, image_url, is_available, sort_order')
+    .eq('is_available', true)
+    .order('sort_order', { ascending: true })
     .limit(6);
-  const wrap = document.getElementById('highlights');
-  wrap.innerHTML = '';
-  if (error || !data?.length){
-    // fallback placeholders
-    wrap.innerHTML = `
-      <div class="rounded-2xl bg-white border p-4">Đen pha phin — 35,000 đ</div>
-      <div class="rounded-2xl bg-white border p-4">Cacao latte — 50,000 đ</div>
-      <div class="rounded-2xl bg-white border p-4">Bánh mì pate — 30,000 đ</div>`;
+
+  if (error){
+    skel.classList.add('hidden');
+    err.textContent = 'Không tải được dữ liệu. Vui lòng thử lại sau.';
+    err.classList.remove('hidden');
     return;
   }
-  data.forEach(p=>{
-    const title = lang==='vi' ? (p.name_vi||p.name) : (p.name||p.name_vi);
-    const money = (v)=> (v||0).toLocaleString(lang==='vi'?'vi-VN':'en-US') + (lang==='vi'?' đ':' VND');
+
+  list.innerHTML = '';
+  (data || []).forEach(p=>{
+    const title = pickTitle(p);
+    const href  = new URL('order.html', location.href);
+    href.searchParams.set('category', p.category || '');
+    if (p.subcategory) href.searchParams.set('subcategory', p.subcategory);
+
     const card = document.createElement('a');
-    const search = new URLSearchParams();
-    if (p.section) search.set('section', p.section);
-    if (p.category) search.set('category', p.category);
-    card.href = 'order.html?'+search.toString();
-    card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden';
+    card.href = href.toString();
+    card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden fade-in';
     card.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-32 object-cover" alt="">` : `<div class="w-full h-32 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
+      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">` :
+        `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
         <div class="font-semibold line-clamp-2">${title}</div>
-        <div class="text-xs text-neutral-500 mt-0.5">${p.section} • ${p.category}${p.subgroup?(' • '+p.subgroup):''}</div>
-        <div class="mt-2 font-semibold">${money(p.price)}</div>
+        <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
+        <div class="mt-2 font-semibold">${moneyK(p.price_vnd)}</div>
       </div>`;
-    wrap.appendChild(card);
+    list.appendChild(card);
   });
+
+  skel.classList.add('hidden');
+  list.classList.remove('hidden');
 }
-loadHighlights();
 
 document.getElementById('year').textContent = new Date().getFullYear();
+loadHighlights();
 </script>
 </body>
 </html>
