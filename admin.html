@@ -9,14 +9,8 @@
   <style>
     .chip{border-radius:9999px;padding:.4rem .85rem;border:1px solid #e5e7eb;background:#fff}
     .chip.active{background:#111;color:#fff;border-color:#111}
-    @media (max-width: 640px){
-      /* nicer tap targets */
-      .chip{padding:.5rem .95rem}
-    }
-    @media print{
-      body{background:#fff}
-      .no-print{display:none!important}
-    }
+    @media (max-width: 640px){ .chip{padding:.5rem .95rem} }
+    @media print{ body{background:#fff} .no-print{display:none!important} }
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900">
@@ -32,10 +26,10 @@
     </div>
   </header>
 
-  <!-- Sticky filters (mobile) -->
+  <!-- Sticky filters -->
   <div class="no-print sticky top-0 z-40 bg-neutral-50/80 backdrop-blur border-y">
     <div class="max-w-7xl mx-auto px-4 py-3 grid gap-2 sm:grid-cols-[1fr_180px_180px]">
-      <input id="q" placeholder="Search name/phone…" class="border rounded-xl px-3 py-2 bg-white">
+      <input id="q" placeholder="Tìm tên/điện thoại/địa chỉ/mã đơn…" class="border rounded-xl px-3 py-2 bg-white">
       <div class="grid grid-cols-2 gap-2 sm:contents">
         <input id="dateFrom" type="date" class="border rounded-xl px-3 py-2 bg-white">
         <input id="dateTo"   type="date" class="border rounded-xl px-3 py-2 bg-white">
@@ -45,6 +39,7 @@
         <button data-st="pending"   class="chip">Pending</button>
         <button data-st="paid"      class="chip">Paid</button>
         <button data-st="delivered" class="chip">Delivered</button>
+        <button data-st="cancelled" class="chip">Cancelled</button>
       </div>
     </div>
   </div>
@@ -52,143 +47,130 @@
   <!-- List -->
   <main class="max-w-7xl mx-auto px-4 py-5">
     <div id="list" class="grid gap-4"></div>
-    <p id="empty" class="hidden text-neutral-500 mt-10 text-center">No orders yet.</p>
+    <p id="empty" class="hidden text-neutral-500 mt-10 text-center">Chưa có đơn hàng.</p>
   </main>
 
 <script>
-/* ====== CONFIG ====== */
-const SUPABASE_URL = 'https://peenohpyubshzxgzzkhx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
-/* ==================== */
+/* ========= CONFIG (same project) ========= */
+const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const money = v => (v||0).toLocaleString('vi-VN') + ' đ';
+/* ========= Helpers ========= */
+const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
-/** Load orders + customers + items + consent and render */
-async function load() {
-  const q = document.getElementById('q').value.trim().toLowerCase();
+/* ========= Load data =========
+   Schema:
+   orders(id, code, customer_name, phone, address, notes, payment_method, status, total_vnd, created_at)
+   order_items(order_id, name_snapshot, price_vnd, qty, line_total_vnd)
+*/
+async function load(){
+  const q    = document.getElementById('q').value.trim().toLowerCase();
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  // Orders
   let oQuery = sb.from('orders')
-    .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
+    .select('id, code, created_at, customer_name, phone, address, notes, payment_method, status, total_vnd')
     .order('created_at', { ascending:false });
+
   if (from) oQuery = oQuery.gte('created_at', from);
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
   if (statusFilter !== 'all') oQuery = oQuery.eq('status', statusFilter);
 
   const { data: orders, error: oErr } = await oQuery;
-  if (oErr) { console.error(oErr); alert('Failed to load orders'); return; }
-  if (!orders?.length) { render([]); return; }
+  if (oErr){ console.error(oErr); alert('Tải đơn hàng thất bại'); return; }
+  if (!orders?.length){ render([]); return; }
 
-  // Customers
-  const customerIds = [...new Set(orders.map(o => o.customer_id).filter(Boolean))];
-  const { data: cust } = await sb.from('customers').select('id,name,phone').in('id', customerIds);
-  const customersById = Object.fromEntries((cust||[]).map(c=>[c.id,c]));
-
-  // Items
   const orderIds = orders.map(o=>o.id);
-  const { data: items } = await sb.from('order_items')
-    .select('order_id,name,unit_price,qty')
+  const { data: items, error: iErr } = await sb.from('order_items')
+    .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
     .in('order_id', orderIds);
+  if (iErr){ console.error(iErr); }
+
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
-  // Consents
-  const { data: consents } = await sb.from('marketing_consents')
-    .select('customer_id')
-    .in('customer_id', customerIds);
-  const consentSet = new Set((consents||[]).map(c=>c.customer_id));
-
-  // Merge
-  const merged = orders.map(o => ({
-    ...o,
-    customer: customersById[o.customer_id] || null,
-    order_items: itemsByOrder[o.id] || [],
-    consent: consentSet.has(o.customer_id)
-  }));
-
-  // Search filter
+  // free-text search: name, phone, address, code
+  const merged = orders.map(o => ({...o, order_items: itemsByOrder[o.id] || []}));
   const filtered = q
-    ? merged.filter(o => {
-        const n = (o.customer?.name || '').toLowerCase();
-        const p = (o.customer?.phone || '').toLowerCase();
-        const addr = JSON.stringify(o.address_snapshot||{}).toLowerCase();
-        return n.includes(q) || p.includes(q) || addr.includes(q);
+    ? merged.filter(o=>{
+        const hay = [
+          o.customer_name||'', o.phone||'', o.address||'', o.code||''
+        ].join(' ').toLowerCase();
+        return hay.includes(q);
       })
     : merged;
 
   render(filtered);
 }
 
-function render(orders) {
-  const empty = document.getElementById('empty');
+/* ========= Render ========= */
+function render(orders){
   const list = document.getElementById('list');
+  const empty = document.getElementById('empty');
   list.innerHTML = '';
   empty.classList.toggle('hidden', orders.length>0);
 
   orders.forEach(o=>{
-    const a = o.address_snapshot || {};
-    const addrStr = [a.street,a.ward,a.district,a.province].filter(Boolean).join(', ');
     const itemsHtml = (o.order_items||[]).map(it=>`
-      <div class="flex justify-between">
-        <div class="truncate">${it.name}</div>
-        <div class="shrink-0">${it.qty} × ${money(it.unit_price)}</div>
+      <div class="flex justify-between text-sm">
+        <div class="truncate">${it.name_snapshot}</div>
+        <div class="shrink-0">${it.qty} × ${money(it.price_vnd)}</div>
       </div>
     `).join('');
 
+    // compute subtotal from items (in case you later add delivery_fee)
+    const subtotal = (o.order_items||[]).reduce((s,it)=> s + (it.line_total_vnd||0), 0);
+
     const card = document.createElement('div');
     card.className = 'bg-white border shadow-sm rounded-2xl p-4';
-
     card.innerHTML = `
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div class="text-sm text-neutral-500">#${o.id.slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
-          <div class="font-semibold mt-1">${o.customer?.name || '—'} • ${o.customer?.phone || ''}</div>
-          <div class="text-sm text-neutral-600">${addrStr || ''}</div>
-          ${o.note ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.note}</div>` : ''}
-          <div class="text-xs mt-1 ${o.consent?'text-green-700':'text-neutral-500'}">
-            ${o.consent ? '✓ consent to promotions' : '— no marketing consent'}
-          </div>
+          <div class="text-sm text-neutral-500">#${o.code || o.id.slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
+          <div class="font-semibold mt-1">${o.customer_name || '—'} • ${o.phone || ''}</div>
+          <div class="text-sm text-neutral-600">${o.address || ''}</div>
+          ${o.notes ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.notes}</div>` : ''}
+          <div class="text-xs mt-1 text-neutral-500">Thanh toán: ${o.payment_method || '—'}</div>
         </div>
         <div class="text-right">
-          <div class="text-neutral-600 text-sm">Subtotal: ${money(o.subtotal)}</div>
-          <div class="text-neutral-600 text-sm">Delivery: ${money(o.delivery_fee)}</div>
-          <div class="font-semibold text-lg mt-1">Total: ${money(o.total)}</div>
+          <div class="text-neutral-600 text-sm">Tạm tính: ${money(subtotal)}</div>
+          <div class="font-semibold text-lg mt-1">Tổng: ${money(o.total_vnd)}</div>
           <div class="mt-1 inline-block text-xs px-2 py-1 rounded bg-neutral-100 border">${o.status}</div>
           <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
-            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy address</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy địa chỉ</button>
             <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
-               href="https://www.google.com/maps/search/${encodeURIComponent(addrStr)}">Map</a>
-            <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">Print receipt</button>
-            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Mark Paid</button>
+               href="https://www.google.com/maps/search/${encodeURIComponent(o.address || '')}">Bản đồ</a>
+            <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">In hóa đơn</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Đánh dấu Paid</button>
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:delivered">Delivered</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50 text-red-600" data-act="set:cancelled">Cancel</button>
           </div>
         </div>
       </div>
-      <div class="mt-3 border-t pt-3 text-sm">
-        <div class="font-medium mb-1">Items</div>
+
+      <div class="mt-3 border-t pt-3">
+        <div class="font-medium mb-1">Món</div>
         <div class="grid gap-1">${itemsHtml}</div>
       </div>
     `;
 
     // actions
     card.querySelectorAll('[data-act]').forEach(btn=>{
-      btn.onclick = async () => {
+      btn.onclick = async ()=>{
         const act = btn.dataset.act;
-        if (act === 'copy') {
-          await navigator.clipboard.writeText(addrStr);
-          btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy address',1200);
-        } else if (act === 'print') {
+        if (act === 'copy'){
+          await navigator.clipboard.writeText(o.address || '');
+          btn.textContent = 'Đã copy!'; setTimeout(()=>btn.textContent='Copy địa chỉ',1200);
+        } else if (act === 'print'){
           printReceipt(o);
-        } else if (act?.startsWith('set:')) {
+        } else if (act.startsWith('set:')){
           const newStatus = act.split(':')[1];
           btn.disabled = true;
-          const { error } = await sb.from('orders').update({ status: newStatus }).eq('id', o.id);
+          const { error } = await sb.from('orders').update({ status:newStatus }).eq('id', o.id);
           btn.disabled = false;
-          if (error) { alert('Failed to update status'); console.error(error); }
+          if (error){ alert('Cập nhật trạng thái thất bại'); console.error(error); }
           else load();
         }
       };
@@ -198,22 +180,22 @@ function render(orders) {
   });
 }
 
-/* Pretty printer */
+/* ========= Print receipt ========= */
 function printReceipt(o){
-  const a = o.address_snapshot || {};
   const items = o.order_items || [];
-  const addrStr = [a.street,a.ward,a.district,a.province].filter(Boolean).join(', ');
-  const itemsRows = items.map(it=>`
+  const rows = items.map(it=>`
     <tr>
-      <td style="padding:6px 0">${it.name}</td>
+      <td style="padding:6px 0">${it.name_snapshot}</td>
       <td style="text-align:center">${it.qty}</td>
-      <td style="text-align:right">${money(it.unit_price)}</td>
-      <td style="text-align:right">${money(it.unit_price*it.qty)}</td>
+      <td style="text-align:right">${money(it.price_vnd)}</td>
+      <td style="text-align:right">${money((it.line_total_vnd)|| (it.price_vnd*it.qty))}</td>
     </tr>
   `).join('');
+  const subtotal = items.reduce((s,it)=> s + (it.line_total_vnd||it.price_vnd*it.qty||0), 0);
+
   const wnd = window.open('', '_blank', 'width=420,height=620');
   wnd.document.write(`
-    <html><head><title>Receipt ${o.id.slice(0,8)}</title>
+    <html><head><title>Receipt ${o.code || o.id.slice(0,8)}</title>
     <style>
       body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;padding:20px}
       h1{font-size:18px;margin:0}
@@ -228,29 +210,29 @@ function printReceipt(o){
         <h1>CAFE — CACAO</h1>
         <span class="badge">${o.status}</span>
       </div>
-      <div class="muted">Order #${o.id}</div>
+      <div class="muted">Order #${o.code || o.id}</div>
       <div class="muted">${new Date(o.created_at).toLocaleString('vi-VN')}</div>
 
       <div style="margin-top:12px">
-        <div><strong>${o.customer?.name || ''}</strong> • ${o.customer?.phone || ''}</div>
-        <div class="muted">${addrStr}</div>
-        ${o.note ? `<div class="muted">Note: ${a.note||o.note}</div>` : ''}
+        <div><strong>${o.customer_name || ''}</strong> • ${o.phone || ''}</div>
+        <div class="muted">${o.address || ''}</div>
+        ${o.notes ? `<div class="muted">Note: ${o.notes}</div>` : ''}
+        <div class="muted">Thanh toán: ${o.payment_method || '—'}</div>
       </div>
 
       <table>
         <thead>
-          <tr><th style="text-align:left">Item</th><th>Qty</th><th style="text-align:right">Price</th><th style="text-align:right">Amount</th></tr>
+          <tr><th style="text-align:left">Món</th><th>SL</th><th style="text-align:right">Giá</th><th style="text-align:right">Thành tiền</th></tr>
         </thead>
-        <tbody>${itemsRows}</tbody>
+        <tbody>${rows}</tbody>
         <tfoot>
-          <tr class="totals"><td colspan="3" style="text-align:right">Subtotal</td><td style="text-align:right">${money(o.subtotal)}</td></tr>
-          <tr class="totals"><td colspan="3" style="text-align:right">Delivery</td><td style="text-align:right">${money(o.delivery_fee)}</td></tr>
-          <tr class="totals"><td colspan="3" style="text-align:right">Total</td><td style="text-align:right">${money(o.total)}</td></tr>
+          <tr class="totals"><td colspan="3" style="text-align:right">Tạm tính</td><td style="text-align:right">${money(subtotal)}</td></tr>
+          <tr class="totals"><td colspan="3" style="text-align:right">Tổng</td><td style="text-align:right">${money(o.total_vnd)}</td></tr>
         </tfoot>
       </table>
 
-      <p class="muted" style="margin-top:14px">Thanks for your order!</p>
-      <button class="no-print" onclick="window.print()">Print</button>
+      <p class="muted" style="margin-top:14px">Cảm ơn bạn đã đặt hàng!</p>
+      <button class="no-print" onclick="window.print()">In</button>
     </body></html>
   `);
   wnd.document.close();
@@ -258,59 +240,47 @@ function printReceipt(o){
   wnd.onload = () => wnd.print();
 }
 
-/* CSV export (orders + customer + address + consent + items) */
+/* ========= Export CSV ========= */
 document.getElementById('exportOrders').onclick = async ()=>{
   const { data: orders, error: oErr } = await sb.from('orders')
-    .select('id, created_at, status, subtotal, delivery_fee, total, note, address_snapshot, customer_id')
+    .select('id, code, created_at, customer_name, phone, address, notes, payment_method, status, total_vnd')
     .order('created_at', { ascending:false });
-  if (oErr) { console.error(oErr); alert('Export failed (orders)'); return; }
-  if (!orders?.length){ alert('No orders'); return; }
+  if (oErr){ console.error(oErr); alert('Export thất bại (orders)'); return; }
+  if (!orders?.length){ alert('Không có đơn'); return; }
 
   const orderIds = orders.map(o=>o.id);
-  const custIds  = [...new Set(orders.map(o=>o.customer_id).filter(Boolean))];
+  const { data: items, error: iErr } = await sb.from('order_items')
+    .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
+    .in('order_id', orderIds);
+  if (iErr){ console.error(iErr); alert('Export thất bại (items)'); return; }
 
-  const [{ data: cust }, { data: items }, { data: cons }] = await Promise.all([
-    sb.from('customers').select('id,name,phone').in('id', custIds),
-    sb.from('order_items').select('order_id,name,unit_price,qty').in('order_id', orderIds),
-    sb.from('marketing_consents').select('customer_id')
-  ]);
-
-  const customersById = Object.fromEntries((cust||[]).map(c=>[c.id,c]));
-  const consentSet = new Set((cons||[]).map(c=>c.customer_id));
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
   const rows = [
-    ['order_id','created_at','status','name','phone','street','ward','district','province','note','consent','subtotal','delivery_fee','total','items']
+    ['order_id','code','created_at','status','customer_name','phone','address','notes','payment_method','total_vnd','items']
   ];
-
   orders.forEach(o=>{
-    const a = o.address_snapshot || {};
-    const c = customersById[o.customer_id] || {};
-    const itemsString = (itemsByOrder[o.id]||[])
-      .map(it => `${it.qty}x ${it.name} @ ${it.unit_price}`)
-      .join(' | ');
+    const parts = (itemsByOrder[o.id]||[]).map(it=>`${it.qty}x ${it.name_snapshot} @ ${it.price_vnd}`).join(' | ');
     rows.push([
-      o.id, o.created_at, o.status, c.name||'', c.phone||'',
-      a.street||'', a.ward||'', a.district||'', a.province||'',
-      o.note||a.note||'', consentSet.has(o.customer_id)?'yes':'no',
-      o.subtotal, o.delivery_fee, o.total, itemsString
+      o.id, o.code, o.created_at, o.status, o.customer_name||'', o.phone||'',
+      o.address||'', o.notes||'', o.payment_method||'', o.total_vnd||0, parts
     ]);
   });
 
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), {href:url, download:'orders_full.csv'});
+  const url  = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), {href:url, download:'orders_export.csv'});
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 
-/* Filters */
+/* ========= Filters ========= */
 document.getElementById('q').addEventListener('input', load);
 document.getElementById('dateFrom').addEventListener('change', load);
 document.getElementById('dateTo').addEventListener('change', load);
 document.querySelectorAll('[data-st]').forEach(b=>{
-  b.onclick = () => {
+  b.onclick = ()=>{
     document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     statusFilter = b.dataset.st;
@@ -318,6 +288,7 @@ document.querySelectorAll('[data-st]').forEach(b=>{
   };
 });
 
+/* Boot */
 load();
 </script>
 </body>
