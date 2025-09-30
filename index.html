@@ -260,40 +260,50 @@ async function loadHighlights(){
   const skel = document.getElementById('highlights_skeleton');
   const list = document.getElementById('highlights');
   const err  = document.getElementById('highlights_error');
-  skel.classList.remove('hidden');
-  list.classList.add('hidden');
-  err.classList.add('hidden');
-  err.textContent = '';
+  skel.classList.remove('hidden'); list.classList.add('hidden'); err.classList.add('hidden'); err.textContent='';
 
-  // IMPORTANT: use the schema we agreed on
-  // products(id, slug, category, subcategory, name_vi, name_en, description_vi, price_vnd, size, is_available, image_url, tags, sort_order)
-  const { data, error } = await sb
+  // Select * (works for both schemas)
+  let { data, error } = await sb
     .from('products')
-    .select('id, slug, category, subcategory, name_vi, name_en, price_vnd, image_url, is_available, sort_order')
-    .eq('is_available', true)
-    .order('sort_order', { ascending: true })
+    .select('*')
     .limit(6);
 
-  if (error){
-    skel.classList.add('hidden');
-    err.textContent = 'Không tải được dữ liệu. Vui lòng thử lại sau.';
-    err.classList.remove('hidden');
-    return;
-  }
+  if (error){ skel.classList.add('hidden'); err.textContent='Không tải được dữ liệu. Vui lòng thử lại sau.'; err.classList.remove('hidden'); return; }
+
+  // normalize each row
+  const norm = (p)=>({
+    id: p.id,
+    slug: p.slug,
+    category: p.category || p.section || '',
+    subcategory: p.subcategory || p.subgroup || '',
+    name_vi: p.name_vi || p.name || '',
+    name_en: p.name_en || '',
+    price_vnd: (p.price_vnd != null) ? p.price_vnd : (p.price != null ? p.price : 0),
+    image_url: p.image_url || '',
+    is_available: ('is_available' in p) ? p.is_available : (('is_active' in p) ? p.is_active : true),
+    sort_order: ('sort_order' in p) ? p.sort_order : 100
+  });
+
+  const rows = (data||[]).map(norm).filter(r => r.is_available);
+
+  // simple order
+  rows.sort((a,b)=> (a.sort_order??100)-(b.sort_order??100));
 
   list.innerHTML = '';
-  (data || []).forEach(p=>{
-    const title = pickTitle(p);
+  rows.forEach(p=>{
     const href  = new URL('order.html', location.href);
-    href.searchParams.set('category', p.category || '');
+    if (p.category) href.searchParams.set('category', p.category);
     if (p.subcategory) href.searchParams.set('subcategory', p.subcategory);
+
+    const title = (lang==='vi' ? (p.name_vi || p.name_en) : (p.name_en || p.name_vi)) || '';
+    const moneyK = v => (Math.round((v||0)/1000)+'k');
 
     const card = document.createElement('a');
     card.href = href.toString();
     card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden fade-in';
     card.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">` :
-        `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
+      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
+                     : `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
         <div class="font-semibold line-clamp-2">${title}</div>
         <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
