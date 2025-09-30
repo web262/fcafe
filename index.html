@@ -307,50 +307,93 @@ document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem
 syncLang();
 
 /* ================== Highlights (unchanged backend) ================== */
+<script>
 async function loadHighlights(){
   const skel = document.getElementById('highlights_skeleton');
   const list = document.getElementById('highlights');
   const err  = document.getElementById('highlights_error');
   skel.classList.remove('hidden'); list.classList.add('hidden'); err.classList.add('hidden'); err.textContent='';
 
-  let { data, error } = await sb.from('products').select('*').limit(6);
-  if (error){ skel.classList.add('hidden'); err.textContent='Không tải được dữ liệu. Vui lòng thử lại sau.'; err.classList.remove('hidden'); return; }
-
+  // Helper: normalize old/new schemas
   const norm = (p)=>({
-    id:p.id, slug:p.slug, category:p.category||p.section||'', subcategory:p.subcategory||p.subgroup||'',
-    name_vi:p.name_vi||p.name||'', name_en:p.name_en||'',
-    price_vnd:(p.price_vnd!=null)?p.price_vnd:(p.price!=null?p.price:0),
-    image_url:p.image_url||'', is_available:('is_available' in p)?p.is_available:(('is_active' in p)?p.is_active:true),
-    sort_order:('sort_order' in p)?p.sort_order:100
+    id: p.id,
+    slug: p.slug,
+    category: p.category || p.section || '',
+    subcategory: p.subcategory || p.subgroup || '',
+    name_vi: p.name_vi || p.name || '',
+    name_en: p.name_en || '',
+    price_vnd: (p.price_vnd != null) ? p.price_vnd : (p.price != null ? p.price : 0),
+    image_url: p.image_url || '',
+    is_available: ('is_available' in p) ? p.is_available : (('is_active' in p) ? p.is_active : true),
+    sort_order: ('sort_order' in p) ? p.sort_order : 100
   });
 
-  const rows=(data||[]).map(norm).filter(r=>r.is_available)
-    .sort((a,b)=> (a.sort_order??100)-(b.sort_order??100));
+  // 1) Try: featured = true (if column exists + you set some)
+  let data = null, error = null;
 
-  list.innerHTML='';
+  try {
+    const res = await sb
+      .from('products')
+      .select('*')
+      .eq('is_available', true)
+      .eq('featured', true)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+    data = res.data; error = res.error;
+  } catch (e) {
+    // ignore—likely "column featured does not exist"
+  }
+
+  // 2) Fallback: top by sort_order if featured missing/empty
+  if (error || !data?.length){
+    const res2 = await sb
+      .from('products')
+      .select('*')
+      .eq('is_available', true)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+    data = res2.data; error = res2.error;
+  }
+
+  if (error){
+    skel.classList.add('hidden');
+    err.textContent = (lang==='vi')
+      ? 'Không tải được dữ liệu. Vui lòng thử lại sau.'
+      : 'Failed to load data. Please try again later.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  const rows = (data||[]).map(norm);
+  const moneyK = v => (Math.round((v||0)/1000)+'k');
+  list.innerHTML = '';
+
   rows.forEach(p=>{
-    const href=new URL('order.html',location.href);
-    if(p.category) href.searchParams.set('category',p.category);
-    if(p.subcategory) href.searchParams.set('subcategory',p.subcategory);
-    const title=(lang==='vi'?(p.name_vi||p.name_en):(p.name_en||p.name_vi))||'';
-    const moneyK=v=>(Math.round((v||0)/1000)+'k');
+    const href  = new URL('order.html', location.href);
+    if (p.category)    href.searchParams.set('category', p.category);
+    if (p.subcategory) href.searchParams.set('subcategory', p.subcategory);
 
-    const card=document.createElement('a');
-    card.href=href.toString();
-    card.className='card rounded-2xl glass ring-1 overflow-hidden fade-in';
-    card.innerHTML=`
-      ${p.image_url?`<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
-                   :`<div class="w-full h-40 bg-white/40 grid place-items-center text-neutral-500">${(p.category||'').slice(0,2)}</div>`}
+    const title = (lang==='vi' ? (p.name_vi || p.name_en) : (p.name_en || p.name_vi)) || '';
+    const card = document.createElement('a');
+    card.href = href.toString();
+    card.className = 'card rounded-2xl bg-white/90 backdrop-blur border shadow-soft overflow-hidden fade-in';
+    card.innerHTML = `
+      ${p.image_url
+        ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
+        : `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
         <div class="font-semibold line-clamp-2">${title}</div>
-        <div class="text-xs opacity-80 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
+        <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
         <div class="mt-2 font-semibold">${moneyK(p.price_vnd)}</div>
       </div>`;
     list.appendChild(card);
   });
 
-  skel.classList.add('hidden'); list.classList.remove('hidden');
+  skel.classList.add('hidden');
+  list.classList.remove('hidden');
 }
+</script>
+
 
 document.getElementById('year').textContent = new Date().getFullYear();
 loadHighlights();
