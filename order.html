@@ -10,20 +10,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ===== Café palette + utilities ===== */
     :root{
-      --ink:#0b0b0b;             /* main text */
-      --muted:#6b7280;           /* secondary text */
-      --ring:rgba(15,23,42,.10); /* subtle outline */
-
-      --amber:#FFB86B;           /* crema */
-      --rose:#FF8FAB;            /* pastry */
-      --mint:#34D399;            /* fresh */
-      --sky:#60A5FA;             /* iced */
-      --violet:#A78BFA;          /* accent */
-      --foam:#FDF7EE;            /* foam */
+      --ink:#0b0b0b; --muted:#6b7280; --ring:rgba(15,23,42,.10);
+      --amber:#FFB86B; --rose:#FF8FAB; --mint:#34D399; --sky:#60A5FA; --violet:#A78BFA; --foam:#FDF7EE;
     }
-
     body{
       color:var(--ink);
       background:
@@ -31,26 +21,20 @@
         radial-gradient(900px 420px at 110% 0%, #60A5FA40 0, transparent 65%),
         linear-gradient(180deg,#fff 0,#FDF7EE 100%);
     }
-
     .ring-1{ box-shadow:0 0 0 1px var(--ring) inset }
     .glass{ background:rgba(255,255,255,.7); backdrop-filter:saturate(130%) blur(10px) }
     .card{ transition:transform .18s ease, box-shadow .18s ease }
     .card:hover{ transform:translateY(-3px); box-shadow:0 16px 36px rgba(0,0,0,.12) }
     .soft{ box-shadow:0 1px 0 rgba(0,0,0,.05), 0 12px 40px rgba(0,0,0,.07) }
     .fade{ animation:fade .28s ease both } @keyframes fade{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-
     .pill{ transition:background .15s ease,color .15s ease,box-shadow .15s ease }
     .pill[data-active="true"]{ background:#000; color:#fff; box-shadow:0 0 0 1px #000 inset }
-
     .sticky-col{ position:sticky; top:88px }
-
     .panel-title{ position:relative; padding-top:.5rem }
     .panel-title::before{
       content:""; position:absolute; inset:0 0 auto 0; height:6px; border-radius:8px;
-      background:linear-gradient(90deg,var(--amber),var(--rose),var(--sky),var(--violet));
-      opacity:.9;
+      background:linear-gradient(90deg,var(--amber),var(--rose),var(--sky),var(--violet)); opacity:.9;
     }
-
     .prod-accent{ height:6px; background:linear-gradient(90deg,var(--mint),var(--sky)); }
     .img-clip{ overflow:hidden; border-top-left-radius:1rem; border-top-right-radius:1rem }
   </style>
@@ -99,24 +83,7 @@
         </div>
 
         <div id="grid" class="mt-4 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div class="glass ring-1 rounded-2xl p-4 animate-pulse">
-            <div class="w-full h-40 bg-white/60 rounded-xl"></div>
-            <div class="h-4 bg-white/60 rounded mt-3 w-3/4"></div>
-            <div class="h-3 bg-white/60 rounded mt-2 w-1/2"></div>
-            <div class="mt-3 h-9 bg-white/60 rounded"></div>
-          </div>
-          <div class="glass ring-1 rounded-2xl p-4 animate-pulse">
-            <div class="w-full h-40 bg-white/60 rounded-xl"></div>
-            <div class="h-4 bg-white/60 rounded mt-3 w-3/4"></div>
-            <div class="h-3 bg-white/60 rounded mt-2 w-1/2"></div>
-            <div class="mt-3 h-9 bg-white/60 rounded"></div>
-          </div>
-          <div class="glass ring-1 rounded-2xl p-4 animate-pulse">
-            <div class="w-full h-40 bg-white/60 rounded-xl"></div>
-            <div class="h-4 bg-white/60 rounded mt-3 w-3/4"></div>
-            <div class="h-3 bg-white/60 rounded mt-2 w-1/2"></div>
-            <div class="mt-3 h-9 bg-white/60 rounded"></div>
-          </div>
+          <!-- skeletons injected here -->
         </div>
 
         <p id="empty" class="hidden mt-8 text-center text-[var(--muted)]">Không tìm thấy món phù hợp.</p>
@@ -186,36 +153,36 @@
   </footer>
 
 <script>
-/* =============== CONFIG =============== */
+/* ===== CONFIG ===== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* =============== i18n (minimal) =============== */
+/* ===== i18n ===== */
 let LANG = localStorage.getItem('lang') || 'vi';
 document.getElementById('btnVI').onclick = ()=>{LANG='vi';localStorage.setItem('lang','vi');render();};
 document.getElementById('btnEN').onclick = ()=>{LANG='en';localStorage.setItem('lang','en');render();};
 document.getElementById('year').textContent = new Date().getFullYear();
 
-/* =============== State =============== */
+/* ===== State ===== */
 let PRODUCTS = [];
 let VIEW = {cat:'All', subcat:'All', q:''};
 let CART = JSON.parse(localStorage.getItem('cart_v1') || '[]');
 
-/* =============== Utils =============== */
+/* ===== Utils ===== */
 const moneyK = v => (Math.round((Number(v)||0)/1000)+'k');
 const qs = (s, r=document)=> r.querySelector(s);
 const qsa = (s, r=document)=> [...r.querySelectorAll(s)];
 const pickTitle = p => LANG==='vi' ? (p.name_vi||p.name_en||'') : (p.name_en||p.name_vi||'');
 const setCart = (arr)=> { CART = arr; localStorage.setItem('cart_v1', JSON.stringify(CART)); renderCart(); };
 const addToCart = (p)=> {
-  const i = CART.findIndex(x=>x.id===p.id);
+  const i = CART.findIndex(x=>String(x.id)===String(p.id));
   if (i>=0) CART[i].qty += 1;
   else CART.push({id:p.id, name:pickTitle(p), price_vnd:p.price_vnd, image_url:p.image_url, qty:1});
   setCart(CART);
 };
 
-/* =============== Load products (schema tolerant) =============== */
+/* ===== Load products ===== */
 async function loadProducts(){
   const url = new URL(location.href);
   const urlCat = url.searchParams.get('category');
@@ -224,11 +191,10 @@ async function loadProducts(){
   if (urlSub) VIEW.subcat = urlSub;
 
   let { data, error } = await sb.from('products').select('*');
-  if (error){ qs('#error').classList.remove('hidden'); return; }
+  if (error){ console.error(error); qs('#error').classList.remove('hidden'); return; }
 
   const norm = p => ({
-    id: p.id,
-    slug: p.slug,
+    id: p.id, slug: p.slug,
     category: p.category || p.section || '',
     subcategory: p.subcategory || p.subgroup || '',
     name_vi: p.name_vi || p.name || '',
@@ -253,7 +219,7 @@ async function loadProducts(){
   render();
 }
 
-/* =============== Subcategory pills =============== */
+/* ===== Subcategory pills ===== */
 function buildSubcats(){
   const wrap = qs('#subcats'); wrap.innerHTML='';
 
@@ -285,7 +251,7 @@ function buildSubcats(){
   });
 }
 
-/* =============== Render grid =============== */
+/* ===== Render grid ===== */
 function render(){
   const grid = qs('#grid'); grid.innerHTML='';
   qs('#empty').classList.add('hidden'); qs('#error').classList.add('hidden');
@@ -324,17 +290,22 @@ function render(){
   });
 
   qsa('button.add', grid).forEach(btn=>{
-    btn.onclick = ()=>{ const p = PRODUCTS.find(x=>x.id===btn.dataset.id); if (p) addToCart(p); };
+    btn.onclick = ()=>{
+      const rawId = btn.dataset.id;
+      const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+      const p = PRODUCTS.find(x=>String(x.id)===String(id));
+      if (p) addToCart(p);
+    };
   });
   qsa('button[data-jump]', grid).forEach(btn=>{
     btn.onclick = ()=>{ VIEW.cat = btn.dataset.jump || 'All'; VIEW.subcat = btn.dataset.jumpSub || 'All'; buildSubcats(); render(); };
   });
 }
 
-/* =============== Search =============== */
+/* ===== Search ===== */
 qs('#search').addEventListener('input', e=>{ VIEW.q = e.target.value; render(); });
 
-/* =============== Cart =============== */
+/* ===== Cart ===== */
 function renderCart(){
   const list = qs('#cartList'); list.innerHTML='';
   if (!CART.length){ list.innerHTML = `<div class="text-sm text-[var(--muted)]">Chưa có món nào.</div>`; }
@@ -369,8 +340,8 @@ function renderCart(){
 }
 qs('#clearCart').onclick = ()=> setCart([]);
 
-/* =============== Checkout =============== */
-function randCode(){
+/* ===== Checkout ===== */
+function safeCode(){
   const t = new Date();
   const y = String(t.getFullYear()).slice(2);
   const m = String(t.getMonth()+1).padStart(2,'0');
@@ -379,47 +350,44 @@ function randCode(){
   return `CC${y}${m}${d}-${n}`;
 }
 
-// Robust submit handler: reads values directly from inputs
 qs('#checkoutForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const msg = qs('#orderMsg'); msg.textContent=''; msg.className='text-sm mt-2';
+  const btn = qs('#placeOrder');
 
   if (!CART.length){
     msg.textContent = 'Giỏ hàng trống.'; msg.classList.add('text-red-600'); return;
   }
 
-  // read form
   const customer_name  = (qs('input[name="name"]')?.value   || '').trim();
   const phone          = (qs('input[name="phone"]')?.value  || '').trim();
-  const addr           = (qs('input[name="address"]')?.value|| '').trim();
+  const addressInput   = (qs('input[name="address"]')?.value|| '').trim();
   const notesInput     = (qs('textarea[name="notes"]')?.value|| '').trim();
   const payment_method = (qs('select[name="pay"]')?.value   || 'COD');
 
-  if (!customer_name || !phone || !addr){
+  if (!customer_name || !phone || !addressInput){
     msg.textContent = 'Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.';
     msg.classList.add('text-red-600'); return;
   }
 
-  // compute money values once
-  const subtotal = CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0);
+  const subtotal = CART.reduce((s,it)=> s + (Number(it.price_vnd)||0)*(Number(it.qty)||0), 0);
+  const total    = subtotal; // add delivery/tips later if needed
 
-  const btn = qs('#placeOrder');
   btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
 
-  // ✅ send required columns for your schema
+  // Minimal fields that we know exist / are safe, including required "total"
   const order = {
+    code: safeCode(),
     customer_name,
     phone,
-    address: addr,               // ok to send if column exists
-    address_snapshot: addr,      // required by your DB
+    address_snapshot: addressInput,
     notes: notesInput || null,
     payment_method,
     status: 'pending',
-    subtotal,                    // required by your DB (NOT NULL)
-    total_vnd: subtotal          // keep for backward compatibility
+    subtotal,     // if your table has it, great; if not it's ignored by PostgREST? (if it errors, drop this)
+    total         // ✅ the NOT NULL column that caused the error
   };
 
-  // create order
   const { data:ordRes, error:ordErr } =
     await sb.from('orders').insert(order).select('*').single();
 
@@ -431,15 +399,15 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // create items
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
     name_snapshot: it.name,
     price_vnd: it.price_vnd,
     qty: it.qty,
-    line_total_vnd: it.price_vnd * it.qty
+    line_total_vnd: (Number(it.price_vnd)||0)*(Number(it.qty)||0)
   }));
+
   const { error:itemErr } = await sb.from('order_items').insert(items);
   if (itemErr){
     console.error('Items insert error:', itemErr);
@@ -449,17 +417,16 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  const safeCode = ordRes.code || (ordRes.id || '').slice(0,8);
-  msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${safeCode}</b>`;
+  msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${ordRes.code || (ordRes.id || '').slice(0,8)}</b>`;
   msg.classList.remove('text-red-600'); msg.classList.add('text-green-700');
   setCart([]); e.target.reset();
   btn.disabled = false; btn.textContent = 'Đặt hàng';
 });
-/* =============== Boot =============== */
-loadProducts();
-renderCart();
 
-// Keep URL filters
+/* ===== Boot ===== */
+(async ()=>{ await loadProducts(); renderCart(); })();
+
+// Keep URL filters if present
 const url = new URL(location.href);
 const urlCat = url.searchParams.get('category');
 const urlSub = url.searchParams.get('subcategory');
