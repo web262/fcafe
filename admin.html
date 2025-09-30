@@ -51,7 +51,7 @@
   </main>
 
 <script>
-/* ========= CONFIG (same project) ========= */
+/* ========= CONFIG ========= */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -61,19 +61,15 @@ const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
 /* ========= Load data =========
-   Schema:
-   orders(id, code, customer_name, phone, address, notes, payment_method, status, total_vnd, created_at)
-   order_items(order_id, name_snapshot, price_vnd, qty, line_total_vnd)
+   orders may have: id, code?, customer_name, phone, address, notes|note, payment_method, status, total_vnd, created_at
 */
 async function load(){
   const q    = document.getElementById('q').value.trim().toLowerCase();
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  let oQuery = sb.from('orders')
-    .select('id, code, created_at, customer_name, phone, address, notes, payment_method, status, total_vnd')
-    .order('created_at', { ascending:false });
-
+  // select all columns to avoid 400 when some are missing
+  let oQuery = sb.from('orders').select('*').order('created_at', { ascending:false });
   if (from) oQuery = oQuery.gte('created_at', from);
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
   if (statusFilter !== 'all') oQuery = oQuery.eq('status', statusFilter);
@@ -83,20 +79,20 @@ async function load(){
   if (!orders?.length){ render([]); return; }
 
   const orderIds = orders.map(o=>o.id);
-  const { data: items, error: iErr } = await sb.from('order_items')
+  const { data: items } = await sb.from('order_items')
     .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
     .in('order_id', orderIds);
-  if (iErr){ console.error(iErr); }
 
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
-  // free-text search: name, phone, address, code
   const merged = orders.map(o => ({...o, order_items: itemsByOrder[o.id] || []}));
+
+  // free-text search
   const filtered = q
     ? merged.filter(o=>{
         const hay = [
-          o.customer_name||'', o.phone||'', o.address||'', o.code||''
+          o.customer_name||'', o.phone||'', o.address||'', o.code||'', o.id||''
         ].join(' ').toLowerCase();
         return hay.includes(q);
       })
@@ -120,7 +116,6 @@ function render(orders){
       </div>
     `).join('');
 
-    // compute subtotal from items (in case you later add delivery_fee)
     const subtotal = (o.order_items||[]).reduce((s,it)=> s + (it.line_total_vnd||0), 0);
 
     const card = document.createElement('div');
@@ -128,10 +123,10 @@ function render(orders){
     card.innerHTML = `
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div class="text-sm text-neutral-500">#${o.code || o.id.slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
+          <div class="text-sm text-neutral-500">#${o.code || (o.id||'').slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
           <div class="font-semibold mt-1">${o.customer_name || '—'} • ${o.phone || ''}</div>
           <div class="text-sm text-neutral-600">${o.address || ''}</div>
-          ${o.notes ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.notes}</div>` : ''}
+          ${(o.notes || o.note) ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.notes || o.note}</div>` : ''}
           <div class="text-xs mt-1 text-neutral-500">Thanh toán: ${o.payment_method || '—'}</div>
         </div>
         <div class="text-right">
@@ -156,7 +151,6 @@ function render(orders){
       </div>
     `;
 
-    // actions
     card.querySelectorAll('[data-act]').forEach(btn=>{
       btn.onclick = async ()=>{
         const act = btn.dataset.act;
@@ -180,7 +174,7 @@ function render(orders){
   });
 }
 
-/* ========= Print receipt ========= */
+/* ========= Print ========= */
 function printReceipt(o){
   const items = o.order_items || [];
   const rows = items.map(it=>`
@@ -195,7 +189,7 @@ function printReceipt(o){
 
   const wnd = window.open('', '_blank', 'width=420,height=620');
   wnd.document.write(`
-    <html><head><title>Receipt ${o.code || o.id.slice(0,8)}</title>
+    <html><head><title>Receipt ${o.code || (o.id||'').slice(0,8)}</title>
     <style>
       body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;padding:20px}
       h1{font-size:18px;margin:0}
@@ -216,7 +210,7 @@ function printReceipt(o){
       <div style="margin-top:12px">
         <div><strong>${o.customer_name || ''}</strong> • ${o.phone || ''}</div>
         <div class="muted">${o.address || ''}</div>
-        ${o.notes ? `<div class="muted">Note: ${o.notes}</div>` : ''}
+        ${(o.notes || o.note) ? `<div class="muted">Note: ${o.notes || o.note}</div>` : ''}
         <div class="muted">Thanh toán: ${o.payment_method || '—'}</div>
       </div>
 
@@ -240,11 +234,9 @@ function printReceipt(o){
   wnd.onload = () => wnd.print();
 }
 
-/* ========= Export CSV ========= */
+/* ========= Export CSV (code optional) ========= */
 document.getElementById('exportOrders').onclick = async ()=>{
-  const { data: orders, error: oErr } = await sb.from('orders')
-    .select('id, code, created_at, customer_name, phone, address, notes, payment_method, status, total_vnd')
-    .order('created_at', { ascending:false });
+  const { data: orders, error: oErr } = await sb.from('orders').select('*').order('created_at', { ascending:false });
   if (oErr){ console.error(oErr); alert('Export thất bại (orders)'); return; }
   if (!orders?.length){ alert('Không có đơn'); return; }
 
@@ -257,15 +249,22 @@ document.getElementById('exportOrders').onclick = async ()=>{
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
-  const rows = [
-    ['order_id','code','created_at','status','customer_name','phone','address','notes','payment_method','total_vnd','items']
-  ];
+  const hasCode = orders.some(o => 'code' in o);
+  const header = hasCode
+    ? ['order_id','code','created_at','status','customer_name','phone','address','notes','payment_method','total_vnd','items']
+    : ['order_id','created_at','status','customer_name','phone','address','notes','payment_method','total_vnd','items'];
+
+  const rows = [header];
+
   orders.forEach(o=>{
     const parts = (itemsByOrder[o.id]||[]).map(it=>`${it.qty}x ${it.name_snapshot} @ ${it.price_vnd}`).join(' | ');
-    rows.push([
-      o.id, o.code, o.created_at, o.status, o.customer_name||'', o.phone||'',
-      o.address||'', o.notes||'', o.payment_method||'', o.total_vnd||0, parts
-    ]);
+    const base = [
+      o.id,
+      o.created_at, o.status, o.customer_name||'', o.phone||'',
+      o.address||'', (o.notes||o.note||''), o.payment_method||'', o.total_vnd||0, parts
+    ];
+    if (hasCode) base.splice(1,0,(o.code||'')); // insert code after id
+    rows.push(base);
   });
 
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -291,5 +290,6 @@ document.querySelectorAll('[data-st]').forEach(b=>{
 /* Boot */
 load();
 </script>
+
 </body>
 </html>
