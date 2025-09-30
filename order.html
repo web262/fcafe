@@ -385,41 +385,61 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
   const msg = qs('#orderMsg'); msg.textContent=''; msg.className='text-sm mt-2';
 
   if (!CART.length){
-    msg.textContent='Giỏ hàng trống.';
-    msg.classList.add('text-red-600');
-    return;
+    msg.textContent = 'Giỏ hàng trống.'; msg.classList.add('text-red-600'); return;
   }
 
-  const nameEl = qs('input[name="name"]');
-  const phoneEl= qs('input[name="phone"]');
-  const addrEl = qs('input[name="address"]');
-  const notesEl= qs('textarea[name="notes"]');
-  const payEl  = qs('select[name="pay"]');
+  // Read values directly from inputs (avoids FormData quirks)
+  const customer_name  = (qs('input[name="name"]')?.value   || '').trim();
+  const phone          = (qs('input[name="phone"]')?.value  || '').trim();
+  const addr           = (qs('input[name="address"]')?.value|| '').trim();
+  const notesInput     = (qs('textarea[name="notes"]')?.value|| '').trim();
+  const payment_method = (qs('select[name="pay"]')?.value   || 'COD');
 
-  const customer_name = (nameEl?.value || '').trim();
-  const phone         = (phoneEl?.value || '').trim();
-  const address       = (addrEl?.value  || '').trim();
-  const notes         = (notesEl?.value || '').trim() || null;
-  const payment_method= (payEl?.value   || 'COD');
-
-  if (!customer_name || !phone || !address){
-    msg.textContent='Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.';
-    msg.classList.add('text-red-600');
-    return;
+  if (!customer_name || !phone || !addr){
+    msg.textContent = 'Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.';
+    msg.classList.add('text-red-600'); return;
   }
 
-  // ⚠️ Do NOT send `code`—your table likely doesn’t have that column
-  const order = {
-    customer_name, phone, address, notes, payment_method,
-    total_vnd: CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0),
-    status: 'pending'
-  };
-
+  const total_vnd = CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0);
   const btn = qs('#placeOrder'); btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
 
-  // Insert order and return all columns (works whether `code` exists or not)
-  const { data:ordRes, error:ordErr } =
-    await sb.from('orders').insert(order).select('*').single();
+  // ---- Try #1: "new" column names ----
+  let payload1 = {
+    customer_name,
+    phone,
+    address: addr,                 // <- new name
+    notes: notesInput || null,     // <- new name
+    payment_method,                // <- new name
+    status: 'pending',
+    total_vnd
+  };
+
+  // helper to insert + return row
+  async function tryInsert(obj){
+    return await sb.from('orders').insert(obj).select('*').single();
+  }
+
+  let ordRes, ordErr;
+  ({ data: ordRes, error: ordErr } = await tryInsert(payload1));
+
+  // ---- If 400 unknown column, Try #2: fallback column names ----
+  const isUnknownColumn400 =
+    ordErr && ordErr.code === 'PGRST204' ||                      // common PostgREST payload error
+    (ordErr && /column .* does not exist|unknown column/i.test(`${ordErr.message} ${ordErr.details||''}`));
+
+  if (isUnknownColumn400){
+    // Build a fallback with old names and without status (some schemas omit it)
+    const payload2 = {
+      customer_name,
+      phone,
+      delivery_address: addr,      // <- old/alternate
+      note: notesInput || null,    // <- old/alternate
+      payment: payment_method,     // <- old/alternate
+      total_vnd
+      // no status
+    };
+    ({ data: ordRes, error: ordErr } = await tryInsert(payload2));
+  }
 
   if (ordErr){
     console.error('Order insert error:', ordErr);
@@ -429,7 +449,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // Insert items
+  // Insert order items (unchanged)
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
@@ -448,10 +468,11 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // Show a friendly code: prefer `code` if column exists; fallback to short id
+  // Success message (use ordRes.code if your table has it; fallback to short id)
   const safeCode = ordRes.code || (ordRes.id || '').slice(0,8);
   msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${safeCode}</b>`;
   msg.classList.remove('text-red-600'); msg.classList.add('text-green-700');
+
   setCart([]); e.target.reset();
   btn.disabled = false; btn.textContent = 'Đặt hàng';
 });
