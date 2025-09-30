@@ -184,16 +184,38 @@ async function loadProducts(){
   if (urlCat) VIEW.cat = urlCat;
   if (urlSub) VIEW.subcat = urlSub;
 
-  const { data, error } = await sb
+  // Select * so old/new schemas both work
+  let { data, error } = await sb
     .from('products')
-    .select('id,slug,category,subcategory,name_vi,name_en,description_vi,price_vnd,size,is_available,image_url,tags,sort_order')
-    .eq('is_available', true)
-    .order('category', { ascending:true })
-    .order('subcategory', { ascending:true })
-    .order('sort_order', { ascending:true });
+    .select('*');
 
-  if (error){ qs('#error').classList.remove('hidden'); return; }
-  PRODUCTS = data || [];
+  if (error){ document.querySelector('#error').classList.remove('hidden'); return; }
+
+  // normalize
+  const norm = (p)=>({
+    id: p.id,
+    slug: p.slug,
+    category: p.category || p.section || '',
+    subcategory: p.subcategory || p.subgroup || '',
+    name_vi: p.name_vi || p.name || '',
+    name_en: p.name_en || '',
+    description_vi: p.description_vi || p.description || '',
+    price_vnd: (p.price_vnd != null) ? p.price_vnd : (p.price != null ? p.price : 0),
+    size: p.size || '',
+    is_available: ('is_available' in p) ? p.is_available : (('is_active' in p) ? p.is_active : true),
+    image_url: p.image_url || '',
+    tags: p.tags || '',
+    sort_order: ('sort_order' in p) ? p.sort_order : 100
+  });
+
+  PRODUCTS = (data||[]).map(norm).filter(p => p.is_available);
+  // order for nice UX
+  PRODUCTS.sort((a,b)=>{
+    if (a.category!==b.category) return (a.category||'').localeCompare(b.category||'');
+    if (a.subcategory!==b.subcategory) return (a.subcategory||'').localeCompare(b.subcategory||'');
+    return (a.sort_order??100)-(b.sort_order??100);
+  });
+
   buildSubcats();
   render();
 }
