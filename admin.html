@@ -3,58 +3,113 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Orders</title>
+  <title>Admin — Orders | CAFE — CACAO</title>
+
+  <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    .chip{border-radius:9999px;padding:.4rem .85rem;border:1px solid #e5e7eb;background:#fff}
+    :root{
+      --ink:#0b0b0b;
+      --muted:#64748b;
+      --amber:#FFB86B; --rose:#FF8FAB; --sky:#60A5FA; --violet:#A78BFA; --mint:#34D399;
+    }
+    body{
+      color:#111827;
+      background:
+        radial-gradient(1200px 500px at -10% -20%, #FFE8A3 0, #FFE8A3 25%, transparent 60%),
+        radial-gradient(900px 450px at 110% 0%, #FF8FAB40 0, transparent 60%),
+        linear-gradient(180deg, #FFF 0, #FFF9F0 100%);
+    }
+    .glass{backdrop-filter:saturate(130%) blur(10px); background:rgba(255,255,255,.6)}
+    .chip{border-radius:9999px;padding:.5rem .9rem;border:1px solid rgba(15,23,42,.12);background:#fff;transition:.15s}
     .chip.active{background:#111;color:#fff;border-color:#111}
-    @media (max-width: 640px){ .chip{padding:.5rem .95rem} }
-    @media print{ body{background:#fff} .no-print{display:none!important} }
+    .card{transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.08)}
+    .status{border:1px solid rgba(15,23,42,.12); padding:.15rem .5rem; border-radius:9999px; font-size:.75rem}
+    .st-pending{background:#fff;border-color:#e5e7eb}
+    .st-paid{background:#E6FFE8;border-color:#34D399}
+    .st-delivered{background:#E8F1FF;border-color:#60A5FA}
+    .st-cancelled{background:#FFE8EC;border-color:#FF8FAB}
+    @media print{
+      body{background:#fff}
+      .no-print{display:none!important}
+    }
   </style>
 </head>
-<body class="bg-neutral-50 text-neutral-900">
+<body>
 
   <!-- Header -->
-  <header class="max-w-7xl mx-auto px-4 py-5">
-    <div class="flex items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">📦 Admin — Orders</h1>
-      <div class="no-print flex gap-2">
-        <a href="./" class="px-3 py-2 rounded-lg border bg-white hover:bg-neutral-50">← Storefront</a>
-        <button id="exportOrders" class="px-3 py-2 rounded-lg bg-black text-white">Export CSV (full)</button>
+  <header class="sticky top-0 z-40 border-b"
+          style="background:linear-gradient(90deg,#fff9 0,#fff9),linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
+        <div class="leading-tight">
+          <div class="font-semibold tracking-wide">CAFE — CACAO</div>
+          <div class="text-xs text-[var(--muted)]">Admin • Orders</div>
+        </div>
+      </div>
+      <div class="no-print flex items-center gap-2">
+        <a href="./index.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-neutral-50">← Trang chủ</a>
+        <button id="exportOrders" class="px-3 py-2 rounded-lg bg-black text-white">Export CSV</button>
       </div>
     </div>
   </header>
 
-  <!-- Sticky filters -->
-  <div class="no-print sticky top-0 z-40 bg-neutral-50/80 backdrop-blur border-y">
-    <div class="max-w-7xl mx-auto px-4 py-3 grid gap-2 sm:grid-cols-[1fr_180px_180px]">
-      <input id="q" placeholder="Find name/phone/address/order code..." class="border rounded-xl px-3 py-2 bg-white">
-      <div class="grid grid-cols-2 gap-2 sm:contents">
+  <!-- Filters -->
+  <section class="no-print sticky top-14 z-30 border-b glass">
+    <div class="max-w-7xl mx-auto px-4 py-3 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+      <input id="q" placeholder="Tìm: tên / số điện thoại / địa chỉ / mã đơn…" class="border rounded-xl px-3 py-2 bg-white w-full">
+      <div class="flex gap-2">
         <input id="dateFrom" type="date" class="border rounded-xl px-3 py-2 bg-white">
         <input id="dateTo"   type="date" class="border rounded-xl px-3 py-2 bg-white">
       </div>
-      <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
-        <button data-st="all"       class="chip active">All</button>
+      <div class="flex flex-wrap gap-2">
+        <button data-st="all"       class="chip active">Tất cả</button>
         <button data-st="pending"   class="chip">Pending</button>
         <button data-st="paid"      class="chip">Paid</button>
         <button data-st="delivered" class="chip">Delivered</button>
         <button data-st="cancelled" class="chip">Cancelled</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- List -->
-  <main class="max-w-7xl mx-auto px-4 py-5">
-    <div id="list" class="grid gap-4"></div>
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="list" class="grid gap-4">
+      <!-- loading skeleton -->
+      <div class="grid sm:grid-cols-2 gap-4" id="skeleton">
+        <div class="rounded-2xl border p-4 bg-white animate-pulse">
+          <div class="h-4 bg-neutral-100 rounded w-3/5"></div>
+          <div class="h-4 bg-neutral-100 rounded w-2/5 mt-2"></div>
+          <div class="h-24 bg-neutral-100 rounded mt-3"></div>
+        </div>
+        <div class="rounded-2xl border p-4 bg-white animate-pulse">
+          <div class="h-4 bg-neutral-100 rounded w-3/5"></div>
+          <div class="h-4 bg-neutral-100 rounded w-2/5 mt-2"></div>
+          <div class="h-24 bg-neutral-100 rounded mt-3"></div>
+        </div>
+      </div>
+    </div>
     <p id="empty" class="hidden text-neutral-500 mt-10 text-center">Chưa có đơn hàng.</p>
   </main>
+
+  <!-- Footer -->
+  <footer class="border-t"
+          style="background:linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
+    <div class="max-w-7xl mx-auto px-4 py-5 text-sm text-neutral-800/80">
+      © <span id="year"></span> CAFE — CACAO · Admin
+    </div>
+  </footer>
 
 <script>
 /* ========= CONFIG ========= */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ========= Helpers ========= */
 const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
@@ -85,15 +140,13 @@ async function fetchOrderItems(orderIds){
   return res;
 }
 
-/* ========= Load =========
-   orders may have: id, code?, customer_name, phone, address, notes|note, payment_method, status, total_vnd, created_at
-*/
+/* ========= Load ========= */
 async function load(){
+  document.getElementById('skeleton').classList.remove('hidden');
   const q    = document.getElementById('q').value.trim().toLowerCase();
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  // select * to avoid 400s when some columns differ
   let oQuery = sb.from('orders').select('*').order('created_at', { ascending:false });
   if (from) oQuery = oQuery.gte('created_at', from);
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
@@ -105,14 +158,13 @@ async function load(){
 
   const orderIds = orders.map(o=>o.id);
   const { data: items, error: iErr } = await fetchOrderItems(orderIds);
-  if (iErr){ console.error(iErr); } // still render orders
+  if (iErr){ console.error(iErr); }
 
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
 
   const merged = orders.map(o => ({...o, order_items: itemsByOrder[o.id] || []}));
 
-  // free-text search
   const filtered = q
     ? merged.filter(o=>{
         const hay = [
@@ -129,6 +181,7 @@ async function load(){
 function render(orders){
   const list = document.getElementById('list');
   const empty = document.getElementById('empty');
+  document.getElementById('skeleton').classList.add('hidden');
   list.innerHTML = '';
   empty.classList.toggle('hidden', orders.length>0);
 
@@ -142,21 +195,24 @@ function render(orders){
 
     const subtotal = (o.order_items||[]).reduce((s,it)=> s + (it.line_total_vnd||0), 0);
 
+    const st = (o.status||'pending').toLowerCase();
+    const stCls = st==='paid' ? 'st-paid' : st==='delivered' ? 'st-delivered' : st==='cancelled' ? 'st-cancelled' : 'st-pending';
+
     const card = document.createElement('div');
-    card.className = 'bg-white border shadow-sm rounded-2xl p-4';
+    card.className = 'card bg-white border rounded-2xl p-4';
     card.innerHTML = `
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div class="text-sm text-neutral-500">#${o.code || (o.id||'').slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
           <div class="font-semibold mt-1">${o.customer_name || '—'} • ${o.phone || ''}</div>
-          <div class="text-sm text-neutral-600">${o.address || ''}</div>
-          ${(o.notes || o.note) ? `<div class="text-sm mt-1 italic text-neutral-600">Note: ${o.notes || o.note}</div>` : ''}
+          <div class="text-sm text-neutral-700">${o.address || ''}</div>
+          ${(o.notes || o.note) ? `<div class="text-sm mt-1 italic text-neutral-600">Ghi chú: ${o.notes || o.note}</div>` : ''}
           <div class="text-xs mt-1 text-neutral-500">Thanh toán: ${o.payment_method || '—'}</div>
         </div>
-        <div class="text-right">
+        <div class="text-right min-w-[180px]">
           <div class="text-neutral-600 text-sm">Tạm tính: ${money(subtotal)}</div>
           <div class="font-semibold text-lg mt-1">Tổng: ${money(o.total_vnd)}</div>
-          <div class="mt-1 inline-block text-xs px-2 py-1 rounded bg-neutral-100 border">${o.status}</div>
+          <div class="status ${stCls} mt-1 inline-block">${o.status}</div>
           <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy địa chỉ</button>
             <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
@@ -175,7 +231,6 @@ function render(orders){
       </div>
     `;
 
-    // actions
     card.querySelectorAll('[data-act]').forEach(btn=>{
       btn.onclick = async ()=>{
         const act = btn.dataset.act;
@@ -250,7 +305,7 @@ function printReceipt(o){
         </tfoot>
       </table>
 
-      <p class="muted" style="margin-top:14px">Cảm ơn bạn đã đặt hàng!</p>
+      <p class="muted" style="margin-top:14px">Cảm ơn bạn!</p>
       <button class="no-print" onclick="window.print()">In</button>
     </body></html>
   `);
@@ -259,7 +314,7 @@ function printReceipt(o){
   wnd.onload = () => wnd.print();
 }
 
-/* ========= Export CSV (handles presence/absence of code, notes) ========= */
+/* ========= Export CSV ========= */
 document.getElementById('exportOrders').onclick = async ()=>{
   const { data: orders, error: oErr } = await sb.from('orders').select('*').order('created_at', { ascending:false });
   if (oErr){ console.error(oErr); alert('Export thất bại (orders)'); return; }
