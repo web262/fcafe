@@ -399,17 +399,26 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  const items = CART.map(it=>({
+  // create items (correct)
+const items = CART.map(it => {
+  const unit = Number(it.price_vnd) || 0;
+  const qty  = Number(it.qty) || 0;
+  return {
     order_id: ordRes.id,
-    product_id: it.id,
-    name: it.name, 
-    name_snapshot: it.name,
-    price_vnd: it.price_vnd,
-    qty: it.qty,
-    line_total_vnd: (Number(it.price_vnd)||0)*(Number(it.qty)||0)
-  }));
+    product_id: it.id,          // if your column is integer: Number(it.id)
+    name: it.name,
+    unit_price: unit,           // required by DB
+    qty,                        // required by DB
+    line_total_vnd: unit * qty, // computed total per line
 
-  const { error:itemErr } = await sb.from('order_items').insert(items);
+    // optional snapshots (only if these columns exist in DB)
+    name_snapshot: it.name,
+    price_vnd: unit
+  };
+});
+
+const { error:itemErr } = await sb.from('order_items').insert(items);
+
   if (itemErr){
     console.error('Items insert error:', itemErr);
     msg.textContent = 'Đơn đã tạo nhưng thêm món thất bại. Liên hệ cửa hàng.';
