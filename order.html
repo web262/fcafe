@@ -402,6 +402,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
+    name: it.name, 
     name_snapshot: it.name,
     price_vnd: it.price_vnd,
     qty: it.qty,
