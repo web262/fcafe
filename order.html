@@ -44,7 +44,6 @@
 
     .sticky-col{ position:sticky; top:88px }
 
-    /* colored headers for right column */
     .panel-title{ position:relative; padding-top:.5rem }
     .panel-title::before{
       content:""; position:absolute; inset:0 0 auto 0; height:6px; border-radius:8px;
@@ -52,10 +51,7 @@
       opacity:.9;
     }
 
-    /* product header stripe */
     .prod-accent{ height:6px; background:linear-gradient(90deg,var(--mint),var(--sky)); }
-
-    /* fix image rounding bleed */
     .img-clip{ overflow:hidden; border-top-left-radius:1rem; border-top-right-radius:1rem }
   </style>
 </head>
@@ -85,7 +81,6 @@
 
       <!-- LEFT -->
       <section>
-        <!-- Top controls (colorful chip) -->
         <div class="glass rounded-2xl ring-1 soft p-3">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="flex flex-wrap gap-2">
@@ -100,13 +95,10 @@
               <svg class="absolute right-3 top-2.5" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="1.6"/></svg>
             </div>
           </div>
-          <!-- Dynamic subcategory pills -->
           <div id="subcats" class="mt-3 flex flex-wrap gap-2"></div>
         </div>
 
-        <!-- Product grid -->
         <div id="grid" class="mt-4 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <!-- skeletons -->
           <div class="glass ring-1 rounded-2xl p-4 animate-pulse">
             <div class="w-full h-40 bg-white/60 rounded-xl"></div>
             <div class="h-4 bg-white/60 rounded mt-3 w-3/4"></div>
@@ -133,7 +125,6 @@
 
       <!-- RIGHT (sticky) -->
       <aside class="space-y-4 sticky-col">
-        <!-- Cart -->
         <div class="glass rounded-2xl ring-1 soft p-4">
           <h2 class="panel-title text-lg font-semibold">Giỏ hàng</h2>
           <div class="flex items-center justify-between mt-2">
@@ -146,21 +137,20 @@
           </div>
         </div>
 
-        <!-- Checkout -->
         <div class="glass rounded-2xl ring-1 soft p-4">
           <h3 class="panel-title text-lg font-semibold">Thông tin giao hàng</h3>
-          <form id="checkoutForm" class="mt-3 space-y-3">
+          <form id="checkoutForm" class="mt-3 space-y-3" novalidate>
             <div>
               <label class="text-sm text-[var(--muted)]">Họ tên</label>
-              <input required name="name" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="Nguyễn Văn A">
+              <input required name="name" autocomplete="name" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="Nguyễn Văn A">
             </div>
             <div>
               <label class="text-sm text-[var(--muted)]">Số điện thoại</label>
-              <input required name="phone" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="098xxxxxxx" pattern="[0-9+ ]{8,}">
+              <input required name="phone" autocomplete="tel" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="098xxxxxxx" pattern="[0-9+ ]{8,}">
             </div>
             <div>
               <label class="text-sm text-[var(--muted)]">Địa chỉ</label>
-              <input required name="address" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="Số nhà, đường, phường/xã, quận/huyện">
+              <input required name="address" autocomplete="street-address" class="w-full mt-1 rounded-xl border px-3 py-2 bg-white/90" placeholder="Số nhà, đường, phường/xã, quận/huyện">
             </div>
             <div>
               <label class="text-sm text-[var(--muted)]">Ghi chú</label>
@@ -184,7 +174,6 @@
     </div>
   </main>
 
-  <!-- FOOTER -->
   <footer class="border-t"
           style="background:linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
     <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-[var(--ink)]/80 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
@@ -197,7 +186,7 @@
   </footer>
 
 <script>
-/* =============== CONFIG (unchanged backend) =============== */
+/* =============== CONFIG =============== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -209,16 +198,15 @@ document.getElementById('btnEN').onclick = ()=>{LANG='en';localStorage.setItem('
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* =============== State =============== */
-let PRODUCTS = []; // raw normalized list
+let PRODUCTS = [];
 let VIEW = {cat:'All', subcat:'All', q:''};
-let CART = JSON.parse(localStorage.getItem('cart_v1') || '[]'); // [{id,name,price_vnd,qty,image_url}]
+let CART = JSON.parse(localStorage.getItem('cart_v1') || '[]');
 
 /* =============== Utils =============== */
 const moneyK = v => (Math.round((Number(v)||0)/1000)+'k');
 const qs = (s, r=document)=> r.querySelector(s);
 const qsa = (s, r=document)=> [...r.querySelectorAll(s)];
 const pickTitle = p => LANG==='vi' ? (p.name_vi||p.name_en||'') : (p.name_en||p.name_vi||'');
-
 const setCart = (arr)=> { CART = arr; localStorage.setItem('cart_v1', JSON.stringify(CART)); renderCart(); };
 const addToCart = (p)=> {
   const i = CART.findIndex(x=>x.id===p.id);
@@ -288,15 +276,11 @@ function buildSubcats(){
     wrap.appendChild(b);
   });
 
-  // category toggles
   qsa('.cat').forEach(btn=>{
     const active = btn.dataset.cat===VIEW.cat;
     btn.setAttribute('data-active', String(active));
     btn.classList.toggle('bg-black', active);
     btn.classList.toggle('text-white', active);
-  });
-
-  qsa('.cat').forEach(btn=>{
     btn.onclick = ()=>{ VIEW.cat = btn.dataset.cat; VIEW.subcat='All'; buildSubcats(); render(); };
   });
 }
@@ -339,7 +323,6 @@ function render(){
     grid.appendChild(el);
   });
 
-  // actions
   qsa('button.add', grid).forEach(btn=>{
     btn.onclick = ()=>{ const p = PRODUCTS.find(x=>x.id===btn.dataset.id); if (p) addToCart(p); };
   });
@@ -386,30 +369,7 @@ function renderCart(){
 }
 qs('#clearCart').onclick = ()=> setCart([]);
 
-/* =============== Checkout (unchanged) =============== */
-/** Tables (reference only)
-create table if not exists public.orders (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,
-  customer_name text not null,
-  phone text not null,
-  address text not null,
-  notes text,
-  payment_method text default 'COD',
-  status text default 'pending',
-  total_vnd integer not null,
-  created_at timestamptz default now()
-);
-create table if not exists public.order_items (
-  id uuid primary key default gen_random_uuid(),
-  order_id uuid references public.orders(id) on delete cascade,
-  product_id text,
-  name_snapshot text,
-  price_vnd integer not null,
-  qty integer not null,
-  line_total_vnd integer not null
-);
-*/
+/* =============== Checkout =============== */
 function randCode(){
   const t = new Date();
   const y = String(t.getFullYear()).slice(2);
@@ -419,43 +379,57 @@ function randCode(){
   return `CC${y}${m}${d}-${n}`;
 }
 
+// Robust submit handler: reads values directly from inputs
 qs('#checkoutForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const msg = qs('#orderMsg'); msg.textContent=''; msg.className='text-sm mt-2';
-  if (!CART.length){ msg.textContent='Giỏ hàng trống.'; msg.classList.add('text-red-600'); return; }
 
-  const fd = new FormData(e.target);
+  if (!CART.length){
+    msg.textContent='Giỏ hàng trống.';
+    msg.classList.add('text-red-600');
+    return;
+  }
+
+  const nameEl = qs('input[name="name"]');
+  const phoneEl= qs('input[name="phone"]');
+  const addrEl = qs('input[name="address"]');
+  const notesEl= qs('textarea[name="notes"]');
+  const payEl  = qs('select[name="pay"]');
+
+  const customer_name = (nameEl?.value || '').trim();
+  const phone         = (phoneEl?.value || '').trim();
+  const address       = (addrEl?.value  || '').trim();
+  const notes         = (notesEl?.value || '').trim() || null;
+  const payment_method= (payEl?.value   || 'COD');
+
+  if (!customer_name || !phone || !address){
+    msg.textContent='Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.';
+    msg.classList.add('text-red-600');
+    return;
+  }
+
   const order = {
-    // code:  ❌  omit it; DB will fill
-    customer_name: fd.get('name')?.trim(),
-    phone:         fd.get('phone')?.trim(),
-    delivery_address: fd.get('address')?.trim(),    
-    notes:         (fd.get('notes')?.trim() || null),
-    payment_method: fd.get('pay') || 'COD',
+    code: randCode(),
+    customer_name, phone, address, notes, payment_method,
     total_vnd: CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0),
     status: 'pending'
   };
 
-  if (!order.customer_name || !order.phone || !order.address){
-    msg.textContent='Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.';
-    msg.classList.add('text-red-600'); return;
-  }
-
   const btn = qs('#placeOrder'); btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
 
-  // 1) Insert order and RETURN id, code generated by DB
+  // 1) Insert order and get id/code
   const { data:ordRes, error:ordErr } =
     await sb.from('orders').insert(order).select('id, code').single();
 
   if (ordErr){
     console.error('Order insert error:', ordErr);
-    msg.textContent = 'Không tạo được đơn hàng. ' + (ordErr.message || 'Vui lòng thử lại.');
+    msg.textContent = 'Không tạo được đơn hàng. Vui lòng thử lại.';
     msg.classList.add('text-red-600');
     btn.disabled = false; btn.textContent = 'Đặt hàng';
     return;
   }
 
-  // 2) Insert order_items
+  // 2) Insert order items
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
@@ -481,12 +455,11 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
   btn.disabled = false; btn.textContent = 'Đặt hàng';
 });
 
-
 /* =============== Boot =============== */
 loadProducts();
 renderCart();
 
-// keep URL filters
+// Keep URL filters
 const url = new URL(location.href);
 const urlCat = url.searchParams.get('category');
 const urlSub = url.searchParams.get('subcategory');
