@@ -429,7 +429,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     // code:  ❌  omit it; DB will fill
     customer_name: fd.get('name')?.trim(),
     phone:         fd.get('phone')?.trim(),
-    address:       fd.get('address')?.trim(),
+    delivery_address: fd.get('address')?.trim(),    
     notes:         (fd.get('notes')?.trim() || null),
     payment_method: fd.get('pay') || 'COD',
     total_vnd: CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0),
