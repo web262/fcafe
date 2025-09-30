@@ -29,7 +29,7 @@
   <!-- Sticky filters -->
   <div class="no-print sticky top-0 z-40 bg-neutral-50/80 backdrop-blur border-y">
     <div class="max-w-7xl mx-auto px-4 py-3 grid gap-2 sm:grid-cols-[1fr_180px_180px]">
-      <input id="q" placeholder="Tìm tên/điện thoại/địa chỉ/mã đơn…" class="border rounded-xl px-3 py-2 bg-white">
+      <input id="q" placeholder="Find name/phone/address/order code..." class="border rounded-xl px-3 py-2 bg-white">
       <div class="grid grid-cols-2 gap-2 sm:contents">
         <input id="dateFrom" type="date" class="border rounded-xl px-3 py-2 bg-white">
         <input id="dateTo"   type="date" class="border rounded-xl px-3 py-2 bg-white">
@@ -60,7 +60,32 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
-/* ========= Load data =========
+/* ===== fetch order_items with schema fallback ===== */
+async function fetchOrderItems(orderIds){
+  // Try NEW schema
+  let res = await sb.from('order_items')
+    .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
+    .in('order_id', orderIds);
+
+  // If bad column (42703), try OLD schema and normalize
+  if (res.error && res.error.code === '42703') {
+    res = await sb.from('order_items')
+      .select('order_id, name, unit_price, qty')
+      .in('order_id', orderIds);
+    if (!res.error) {
+      res.data = (res.data || []).map(it => ({
+        order_id: it.order_id,
+        name_snapshot: it.name,
+        price_vnd: it.unit_price,
+        qty: it.qty,
+        line_total_vnd: (it.unit_price || 0) * (it.qty || 0)
+      }));
+    }
+  }
+  return res;
+}
+
+/* ========= Load =========
    orders may have: id, code?, customer_name, phone, address, notes|note, payment_method, status, total_vnd, created_at
 */
 async function load(){
@@ -68,7 +93,7 @@ async function load(){
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
 
-  // select all columns to avoid 400 when some are missing
+  // select * to avoid 400s when some columns differ
   let oQuery = sb.from('orders').select('*').order('created_at', { ascending:false });
   if (from) oQuery = oQuery.gte('created_at', from);
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
@@ -79,9 +104,8 @@ async function load(){
   if (!orders?.length){ render([]); return; }
 
   const orderIds = orders.map(o=>o.id);
-  const { data: items } = await sb.from('order_items')
-    .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
-    .in('order_id', orderIds);
+  const { data: items, error: iErr } = await fetchOrderItems(orderIds);
+  if (iErr){ console.error(iErr); } // still render orders
 
   const itemsByOrder = {};
   (items||[]).forEach(it => (itemsByOrder[it.order_id] ||= []).push(it));
@@ -138,7 +162,7 @@ function render(orders){
             <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
                href="https://www.google.com/maps/search/${encodeURIComponent(o.address || '')}">Bản đồ</a>
             <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">In hóa đơn</button>
-            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Đánh dấu Paid</button>
+            <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Mark Paid</button>
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:delivered">Delivered</button>
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50 text-red-600" data-act="set:cancelled">Cancel</button>
           </div>
@@ -151,6 +175,7 @@ function render(orders){
       </div>
     `;
 
+    // actions
     card.querySelectorAll('[data-act]').forEach(btn=>{
       btn.onclick = async ()=>{
         const act = btn.dataset.act;
@@ -234,16 +259,14 @@ function printReceipt(o){
   wnd.onload = () => wnd.print();
 }
 
-/* ========= Export CSV (code optional) ========= */
+/* ========= Export CSV (handles presence/absence of code, notes) ========= */
 document.getElementById('exportOrders').onclick = async ()=>{
   const { data: orders, error: oErr } = await sb.from('orders').select('*').order('created_at', { ascending:false });
   if (oErr){ console.error(oErr); alert('Export thất bại (orders)'); return; }
   if (!orders?.length){ alert('Không có đơn'); return; }
 
   const orderIds = orders.map(o=>o.id);
-  const { data: items, error: iErr } = await sb.from('order_items')
-    .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
-    .in('order_id', orderIds);
+  const { data: items, error: iErr } = await fetchOrderItems(orderIds);
   if (iErr){ console.error(iErr); alert('Export thất bại (items)'); return; }
 
   const itemsByOrder = {};
@@ -290,6 +313,5 @@ document.querySelectorAll('[data-st]').forEach(b=>{
 /* Boot */
 load();
 </script>
-
 </body>
 </html>
