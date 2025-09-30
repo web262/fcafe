@@ -2,121 +2,135 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CAFE — CACAO | Cà phê ngon, giao nhanh</title>
-  <meta name="description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi, thanh toán nhanh.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
-
-  <!-- OpenGraph / Twitter -->
-  <meta property="og:title" content="CAFE — CACAO | Cà phê ngon, giao nhanh">
-  <meta property="og:description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi.">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop">
-  <meta name="twitter:card" content="summary_large_image">
-
-  <!-- JSON-LD -->
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"CafeOrCoffeeShop",
-    "name":"CAFE — CACAO",
-    "servesCuisine":["Vietnamese","Coffee","Beverages","Snacks"],
-    "priceRange":"₫",
-    "telephone":"+84-982-319-886",
-    "address":{"@type":"PostalAddress","addressLocality":"Hà Nội","addressCountry":"VN"},
-    "url":"./",
-    "sameAs":["https://www.facebook.com/profile.php?id=100063544271103"]
-  }
-  </script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAFE — CACAO</title>
+  <meta name="description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%23000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .glass{backdrop-filter:saturate(120%) blur(10px)}
+    :root{--ring:rgba(15,23,42,.08)}
+    .glass{backdrop-filter:saturate(120%) blur(12px)}
     .card{transition:transform .18s ease, box-shadow .18s ease}
-    .card:hover{transform:translateY(-2px); box-shadow:0 14px 28px rgba(0,0,0,.08)}
-    .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.05), 0 8px 32px rgba(0,0,0,.06)}
-    .fade-in{animation:fade .4s ease both}
-    @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+    .card:hover{transform:translateY(-3px); box-shadow:0 18px 36px rgba(0,0,0,.08)}
+    .soft{box-shadow:0 1px 0 rgba(0,0,0,.05), 0 12px 40px rgba(0,0,0,.06)}
+    .ring{box-shadow:0 0 0 1px var(--ring) inset}
+    .fade{animation:fade .35s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .blobs:before,.blobs:after{content:"";position:absolute;inset:auto;filter:blur(48px);opacity:.6}
+    .blobs:before{right:10%;top:-40px;width:320px;height:320px;background:radial-gradient(closest-side,#ffedd5,transparent)}
+    .blobs:after{left:-40px;bottom:-60px;width:280px;height:280px;background:radial-gradient(closest-side,#e0e7ff,transparent)}
   </style>
 </head>
-<body class="bg-neutral-50 text-neutral-900 overflow-x-hidden" translate="no">
-  <!-- Top gradient -->
-  <div class="pointer-events-none absolute inset-0 -z-10">
-    <div class="h-[26rem] w-full bg-gradient-to-br from-amber-100 via-rose-100 to-sky-100"></div>
-  </div>
+<body class="bg-neutral-50 text-neutral-900 selection:bg-black selection:text-white" translate="no">
 
-  <!-- NAV -->
-  <header class="sticky top-0 z-40 backdrop-blur bg-white/70 border-b">
-    <div class="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="./" class="flex items-center gap-2">
-        <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
-        <div>
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-white/70 border-b glass">
+    <div class="max-w-6xl mx-auto px-4 h-[64px] flex items-center justify-between">
+      <a href="./" class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
+        <div class="leading-tight">
           <div class="font-semibold tracking-wide">CAFE — CACAO</div>
           <div id="sub_small" class="text-xs text-neutral-500">Đặt món giao tận nơi</div>
         </div>
       </a>
 
       <nav class="hidden md:flex items-center gap-6 text-sm">
-        <a class="hover:opacity-80" href="#about">Giới thiệu</a>
         <a class="hover:opacity-80" href="#menu">Menu</a>
+        <a class="hover:opacity-80" href="#about">Giới thiệu</a>
         <a class="hover:opacity-80" href="#visit">Địa chỉ</a>
       </nav>
 
       <div class="flex items-center gap-2">
-        <a href="order.html" class="hidden sm:inline-flex bg-black text-white px-3 py-1.5 rounded-lg text-sm">Đặt hàng / Order</a>
-        <div class="rounded-xl px-1 py-1 bg-white border glass">
-          <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium">VI</button>
-          <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium">EN</button>
+        <a href="order.html" class="hidden sm:inline-flex px-3 py-2 rounded-lg bg-black text-white text-sm">Đặt hàng</a>
+        <div class="flex items-center rounded-xl bg-white ring">
+          <button id="btnVI" class="px-2.5 py-1.5 rounded-lg text-sm font-medium">VI</button>
+          <button id="btnEN" class="px-2.5 py-1.5 rounded-lg text-sm font-medium">EN</button>
         </div>
       </div>
     </div>
   </header>
 
   <!-- HERO -->
-  <section class="max-w-screen-xl mx-auto px-4 pt-10">
-    <div class="grid lg:grid-cols-2 gap-8 items-center">
-      <div>
+  <section class="relative">
+    <div class="absolute inset-0 -z-10 blobs"></div>
+    <div class="max-w-6xl mx-auto px-4 py-10 lg:py-16 grid lg:grid-cols-2 gap-8 items-center">
+      <div class="fade">
+        <div class="inline-flex items-center gap-2 text-xs rounded-full px-3 py-1 bg-white ring mb-3">
+          <span>★</span><span id="badge_text">Đồ uống ngon – Giao nhanh</span>
+        </div>
         <h1 id="hero_title" class="text-4xl sm:text-5xl font-extrabold leading-tight">
-          CAFE — CACAO<br><span id="hero_title_sub" class="text-neutral-600 font-medium">Cà phê ngon, giao nhanh</span>
+          CAFE — CACAO
         </h1>
-        <p id="hero_sub" class="mt-4 text-neutral-600 text-lg">
-          Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.
+        <p id="hero_sub" class="mt-3 text-neutral-600 text-lg">
+          Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món trực tuyến dễ dàng.
         </p>
-        <div class="mt-6 flex gap-3">
-          <a href="order.html" class="bg-black text-white px-5 py-3 rounded-xl font-medium">Đặt hàng ngay</a>
-          <a href="#menu" class="px-5 py-3 rounded-xl font-medium border bg-white">Xem menu</a>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="order.html" class="px-5 py-3 rounded-xl bg-black text-white font-medium">Đặt hàng ngay</a>
+          <a href="#menu" class="px-5 py-3 rounded-xl bg-white ring font-medium">Xem menu</a>
         </div>
 
-        <!-- Quick contacts -->
-        <div class="mt-6 flex flex-wrap gap-2 text-sm">
-          <a href="https://zalo.me/0982319886" target="_blank" class="px-3 py-1.5 rounded-lg border bg-white">Zalo: 0982319886</a>
-          <a href="tel:0982319886" class="px-3 py-1.5 rounded-lg border bg-white">Gọi / Call</a>
-          <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="px-3 py-1.5 rounded-lg border bg-white">Facebook</a>
+        <div class="mt-6 grid grid-cols-3 sm:flex sm:flex-wrap gap-2 text-xs text-neutral-600">
+          <div class="px-2.5 py-1.5 rounded-lg bg-white ring">Pha Phin</div>
+          <div class="px-2.5 py-1.5 rounded-lg bg-white ring">Smoothies</div>
+          <div class="px-2.5 py-1.5 rounded-lg bg-white ring">Bánh mì</div>
+          <div class="px-2.5 py-1.5 rounded-lg bg-white ring">Xôi</div>
+          <div class="px-2.5 py-1.5 rounded-lg bg-white ring">Ăn vặt</div>
         </div>
       </div>
 
-      <div class="rounded-3xl bg-white border shadow-soft p-4">
-        <img class="rounded-2xl w-full object-cover h-72"
-             src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop"
-             alt="Coffee and pastries" />
+      <div class="fade">
+        <div class="rounded-3xl bg-white soft ring overflow-hidden">
+          <img class="w-full h-[340px] object-cover" src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop" alt="Coffee and pastries" />
+        </div>
+        <div class="mt-3 text-xs text-neutral-500 text-center">Ảnh minh hoạ</div>
       </div>
     </div>
   </section>
 
-  <!-- CATEGORY tiles -->
-  <section id="menu" class="max-w-screen-xl mx-auto px-4 mt-12">
-    <h2 id="sec_menu" class="text-2xl font-bold mb-4">Danh mục</h2>
+  <!-- QUICK CONTACT -->
+  <section class="max-w-6xl mx-auto px-4">
+    <div class="grid sm:grid-cols-3 gap-3">
+      <a href="https://zalo.me/0982319886" target="_blank" class="bg-white ring rounded-2xl p-4 flex items-center justify-between">
+        <div>
+          <div class="text-sm text-neutral-500">Zalo</div>
+          <div class="font-semibold">0982319886</div>
+        </div>
+        <span>→</span>
+      </a>
+      <a href="tel:0982319886" class="bg-white ring rounded-2xl p-4 flex items-center justify-between">
+        <div>
+          <div class="text-sm text-neutral-500">Hotline</div>
+          <div class="font-semibold">Gọi / Call</div>
+        </div>
+        <span>→</span>
+      </a>
+      <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="bg-white ring rounded-2xl p-4 flex items-center justify-between">
+        <div>
+          <div class="text-sm text-neutral-500">Facebook</div>
+          <div class="font-semibold">Theo dõi ưu đãi</div>
+        </div>
+        <span>→</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section id="menu" class="max-w-6xl mx-auto px-4 mt-12">
+    <div class="flex items-end justify-between mb-4">
+      <h2 id="sec_menu" class="text-2xl font-bold">Danh mục</h2>
+      <a href="order.html" class="text-sm underline">Tất cả món</a>
+    </div>
     <div class="grid sm:grid-cols-2 gap-4">
-      <a href="order.html?category=Food" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
-        <div class="h-12 w-12 rounded-xl bg-amber-500/10 grid place-items-center">🍜</div>
+      <a href="order.html?category=Food" class="card bg-white ring rounded-2xl p-5 flex items-center gap-4">
+        <div class="h-12 w-12 rounded-xl bg-amber-500/10 grid place-items-center text-xl">🍜</div>
         <div>
           <div class="text-lg font-semibold">Đồ ăn / Food</div>
-          <div class="text-neutral-600 text-sm">Mì gói, bánh mì, xôi, ăn vặt, món kèm</div>
+          <div class="text-neutral-600 text-sm">Bánh mì, Mì, Xôi, Ăn vặt, Món kèm</div>
         </div>
       </a>
-      <a href="order.html?category=Drinks" class="card rounded-2xl bg-white border shadow-soft p-5 flex items-center gap-4">
-        <div class="h-12 w-12 rounded-xl bg-sky-500/10 grid place-items-center">🥤</div>
+      <a href="order.html?category=Drinks" class="card bg-white ring rounded-2xl p-5 flex items-center gap-4">
+        <div class="h-12 w-12 rounded-xl bg-sky-500/10 grid place-items-center text-xl">🥤</div>
         <div>
           <div class="text-lg font-semibold">Đồ uống / Drinks</div>
           <div class="text-neutral-600 text-sm">Cà phê, Smoothies, Nước ép…</div>
@@ -125,49 +139,44 @@
     </div>
   </section>
 
-  <!-- Highlights -->
-  <section class="max-w-screen-xl mx-auto px-4 mt-10">
-    <div class="flex items-center justify-between">
-      <h3 id="sec_high" class="text-xl font-semibold mb-3">Món nổi bật</h3>
-      <a href="order.html" class="text-sm underline">Xem tất cả</a>
+  <!-- HIGHLIGHTS -->
+  <section class="max-w-6xl mx-auto px-4 mt-12">
+    <div class="flex items-end justify-between mb-3">
+      <h3 id="sec_high" class="text-xl font-semibold">Món nổi bật</h3>
+      <a href="order.html" class="text-sm underline" id="view_all_link">Xem tất cả</a>
     </div>
 
-    <!-- Loading skeleton -->
-    <div id="highlights_skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div class="rounded-2xl bg-white border p-4 animate-pulse">
-        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+    <div id="highlights_wrap" class="grid xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Skeletons -->
+      <div class="bg-white ring rounded-2xl p-4 animate-pulse">
+        <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
         <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
       </div>
-      <div class="rounded-2xl bg-white border p-4 animate-pulse">
-        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+      <div class="bg-white ring rounded-2xl p-4 animate-pulse">
+        <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
         <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
       </div>
-      <div class="rounded-2xl bg-white border p-4 animate-pulse">
-        <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
+      <div class="bg-white ring rounded-2xl p-4 animate-pulse">
+        <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
         <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-        <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+        <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
       </div>
     </div>
-
-    <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
-    <div id="highlights_error" class="hidden mt-3 text-sm text-red-600"></div>
+    <p id="highlights_err" class="hidden mt-3 text-sm text-red-600">Không tải được dữ liệu. Vui lòng thử lại sau.</p>
   </section>
 
-  <!-- About / Hours -->
-  <section id="about" class="max-w-screen-xl mx-auto px-4 mt-14 grid lg:grid-cols-2 gap-8">
-    <div class="rounded-2xl bg-white border shadow-soft p-6">
+  <!-- ABOUT -->
+  <section id="about" class="max-w-6xl mx-auto px-4 mt-14 grid lg:grid-cols-2 gap-6">
+    <div class="bg-white ring rounded-3xl p-6 soft">
       <h3 class="text-xl font-semibold mb-2">Về chúng tôi / About us</h3>
       <p class="text-neutral-700 leading-relaxed">
         CAFE — CACAO phục vụ cà phê pha phin, đồ uống chai sẵn và nhiều món ăn nhẹ.
         Chúng tôi cam kết nguyên liệu chất lượng và giao hàng nhanh chóng.
       </p>
-      <p class="mt-3 text-neutral-700">
-        Theo dõi Facebook và Zalo để nhận khuyến mãi mới nhất!
-      </p>
     </div>
-    <div class="rounded-2xl bg-white border shadow-soft p-6">
+    <div class="bg-white ring rounded-3xl p-6 soft">
       <h3 class="text-xl font-semibold mb-2">Giờ mở cửa / Opening hours</h3>
       <ul class="text-neutral-700 space-y-1">
         <li>Mon – Fri: 7:00 – 21:00</li>
@@ -177,143 +186,113 @@
     </div>
   </section>
 
-  <!-- Visit -->
-  <section id="visit" class="max-w-screen-xl mx-auto px-4 mt-14 mb-16">
+  <!-- MAP -->
+  <section id="visit" class="max-w-6xl mx-auto px-4 mt-14 mb-20">
     <h3 class="text-xl font-semibold mb-3">Địa chỉ / Visit us</h3>
-    <div class="rounded-2xl overflow-hidden border shadow-soft">
+    <div class="rounded-3xl overflow-hidden ring bg-white soft">
       <iframe class="w-full h-72"
         src="https://www.google.com/maps?q=Hanoi&output=embed"
-        loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe>
     </div>
   </section>
 
+  <!-- FOOTER -->
   <footer class="border-t bg-white">
-    <div class="max-w-screen-xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
       <div>© <span id="year"></span> CAFE — CACAO</div>
       <div class="flex gap-3">
-        <a class="underline" href="order.html">Đặt hàng / Order</a>
+        <a class="underline" href="order.html">Đặt hàng</a>
         <a class="underline" href="admin.html">Admin</a>
       </div>
     </div>
   </footer>
 
-  <!-- Floating contact -->
-  <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-    <a href="https://zalo.me/0982319886" target="_blank" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Zalo">ZA</a>
-    <a href="tel:0982319886" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center" title="Call" aria-label="Call">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
-    </a>
-    <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="shadow-lg rounded-full bg-[#1877F2] text-white w-12 h-12 grid place-items-center" title="Facebook">f</a>
+  <!-- STICKY CTA (mobile) -->
+  <div class="fixed bottom-4 left-0 right-0 z-40 px-4 sm:hidden">
+    <a href="order.html" class="block text-center py-3 rounded-xl bg-black text-white font-medium soft">Đặt hàng ngay</a>
   </div>
 
 <script>
-/* ================== CONFIG ================== */
+/* ===== Config (unchanged backend) ===== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ================== i18n ================== */
+/* ===== i18n ===== */
 const STR = {
   vi: {
-    sub_small: "Đặt món giao tận nơi",
-    hero_title: "CAFE — CACAO",
-    hero_title_sub: "Cà phê ngon, giao nhanh",
-    hero_sub: "Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.",
-    menu: "Danh mục",
-    highlights: "Món nổi bật",
-    view_all: "Xem tất cả"
+    sub_small:"Đặt món giao tận nơi",
+    badge:"Đồ uống ngon – Giao nhanh",
+    hero_title:"CAFE — CACAO",
+    hero_sub:"Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món trực tuyến dễ dàng.",
+    menu:"Danh mục", highlights:"Món nổi bật", view_all:"Xem tất cả"
   },
   en: {
-    sub_small: "Order home delivery",
-    hero_title: "CAFE — CACAO",
-    hero_title_sub: "Great coffee, fast delivery",
-    hero_sub: "Hot & fresh delivery. Order online in seconds.",
-    menu: "Categories",
-    highlights: "Highlights",
-    view_all: "View all"
+    sub_small:"Order home delivery",
+    badge:"Great taste — Fast delivery",
+    hero_title:"CAFE — CACAO",
+    hero_sub:"Coffee, drinks & snacks. Order online in seconds.",
+    menu:"Categories", highlights:"Highlights", view_all:"View all"
   }
 };
 let lang = localStorage.getItem('lang') || 'vi';
 function syncLang(){
   document.getElementById('sub_small').textContent = STR[lang].sub_small;
-  document.getElementById('hero_title').firstChild.textContent = STR[lang].hero_title + "\n";
-  document.getElementById('hero_title_sub').textContent = STR[lang].hero_title_sub;
+  document.getElementById('badge_text').textContent = STR[lang].badge;
+  document.getElementById('hero_title').textContent = STR[lang].hero_title;
   document.getElementById('hero_sub').textContent = STR[lang].hero_sub;
   document.getElementById('sec_menu').textContent = STR[lang].menu;
   document.getElementById('sec_high').textContent = STR[lang].highlights;
+  document.getElementById('view_all_link').textContent = STR[lang].view_all;
 }
-document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem('lang','vi'); syncLang(); };
-document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); syncLang(); };
+document.getElementById('btnVI').onclick=()=>{lang='vi';localStorage.setItem('lang','vi');syncLang();};
+document.getElementById('btnEN').onclick=()=>{lang='en';localStorage.setItem('lang','en');syncLang();};
 syncLang();
 
-/* ================== Helpers ================== */
-const moneyK = (v)=> {
-  const n = Number(v||0);
-  if (!n) return lang==='vi' ? '0 đ' : '0 VND';
-  // 30,000 -> "30k"
-  return Math.round(n/1000) + 'k';
-};
-const pickTitle = (row)=> lang==='vi' ? (row.name_vi || row.name_en || '') : (row.name_en || row.name_vi || '');
+/* ===== helpers ===== */
+const moneyK = v => (Math.round((Number(v)||0)/1000)+'k');
+const pickName = p => lang==='vi' ? (p.name_vi||p.name_en||'') : (p.name_en||p.name_vi||'');
 
-/* ================== Highlights ================== */
+/* ===== highlights (schema tolerant) ===== */
 async function loadHighlights(){
-  const skel = document.getElementById('highlights_skeleton');
-  const list = document.getElementById('highlights');
-  const err  = document.getElementById('highlights_error');
-  skel.classList.remove('hidden'); list.classList.add('hidden'); err.classList.add('hidden'); err.textContent='';
+  const wrap = document.getElementById('highlights_wrap');
+  const err = document.getElementById('highlights_err');
 
-  // Select * (works for both schemas)
-  let { data, error } = await sb
-    .from('products')
-    .select('*')
-    .limit(6);
+  let { data, error } = await sb.from('products').select('*').limit(6);
+  if (error){ err.classList.remove('hidden'); return; }
 
-  if (error){ skel.classList.add('hidden'); err.textContent='Không tải được dữ liệu. Vui lòng thử lại sau.'; err.classList.remove('hidden'); return; }
+  const rows = (data||[]).map(p=>({
+    id:p.id,
+    slug:p.slug,
+    category:p.category||p.section||'',
+    subcategory:p.subcategory||p.subgroup||'',
+    name_vi:p.name_vi||p.name||'',
+    name_en:p.name_en||'',
+    price_vnd:(p.price_vnd!=null)?p.price_vnd:(p.price!=null?p.price:0),
+    image_url:p.image_url||'',
+    is_available:('is_available'in p)?p.is_available:(('is_active'in p)?p.is_active:true),
+    sort_order:('sort_order'in p)?p.sort_order:100
+  })).filter(p=>p.is_available)
+    .sort((a,b)=>(a.sort_order??100)-(b.sort_order??100));
 
-  // normalize each row
-  const norm = (p)=>({
-    id: p.id,
-    slug: p.slug,
-    category: p.category || p.section || '',
-    subcategory: p.subcategory || p.subgroup || '',
-    name_vi: p.name_vi || p.name || '',
-    name_en: p.name_en || '',
-    price_vnd: (p.price_vnd != null) ? p.price_vnd : (p.price != null ? p.price : 0),
-    image_url: p.image_url || '',
-    is_available: ('is_available' in p) ? p.is_available : (('is_active' in p) ? p.is_active : true),
-    sort_order: ('sort_order' in p) ? p.sort_order : 100
-  });
-
-  const rows = (data||[]).map(norm).filter(r => r.is_available);
-
-  // simple order
-  rows.sort((a,b)=> (a.sort_order??100)-(b.sort_order??100));
-
-  list.innerHTML = '';
+  wrap.innerHTML = '';
   rows.forEach(p=>{
-    const href  = new URL('order.html', location.href);
+    const href = new URL('order.html', location.href);
     if (p.category) href.searchParams.set('category', p.category);
     if (p.subcategory) href.searchParams.set('subcategory', p.subcategory);
 
-    const title = (lang==='vi' ? (p.name_vi || p.name_en) : (p.name_en || p.name_vi)) || '';
-    const moneyK = v => (Math.round((v||0)/1000)+'k');
-
-    const card = document.createElement('a');
-    card.href = href.toString();
-    card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden fade-in';
-    card.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
-                     : `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
-      <div class="p-4">
-        <div class="font-semibold line-clamp-2">${title}</div>
-        <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
-        <div class="mt-2 font-semibold">${moneyK(p.price_vnd)}</div>
-      </div>`;
-    list.appendChild(card);
+    const el = document.createElement('a');
+    el.href = href.toString();
+    el.className='bg-white ring rounded-2xl p-4 soft card fade block';
+    el.innerHTML = `
+      ${p.image_url
+        ? `<img src="${p.image_url}" class="w-full h-40 object-cover rounded-xl" alt="">`
+        : `<div class="w-full h-40 rounded-xl bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
+      <div class="mt-3 font-semibold line-clamp-2">${pickName(p)}</div>
+      <div class="text-xs text-neutral-500">${p.category}${p.subcategory?(' • '+p.subcategory):''}</div>
+      <div class="mt-1 font-semibold">${moneyK(p.price_vnd)}</div>`;
+    wrap.appendChild(el);
   });
-
-  skel.classList.add('hidden');
-  list.classList.remove('hidden');
 }
 
 document.getElementById('year').textContent = new Date().getFullYear();
