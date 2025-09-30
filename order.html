@@ -408,8 +408,8 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
+  // ⚠️ Do NOT send `code`—your table likely doesn’t have that column
   const order = {
-    code: randCode(),
     customer_name, phone, address, notes, payment_method,
     total_vnd: CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0),
     status: 'pending'
@@ -417,9 +417,9 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
 
   const btn = qs('#placeOrder'); btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
 
-  // 1) Insert order and get id/code
+  // Insert order and return all columns (works whether `code` exists or not)
   const { data:ordRes, error:ordErr } =
-    await sb.from('orders').insert(order).select('id, code').single();
+    await sb.from('orders').insert(order).select('*').single();
 
   if (ordErr){
     console.error('Order insert error:', ordErr);
@@ -429,7 +429,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // 2) Insert order items
+  // Insert items
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
@@ -448,8 +448,9 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // Success
-  msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${ordRes.code}</b>`;
+  // Show a friendly code: prefer `code` if column exists; fallback to short id
+  const safeCode = ordRes.code || (ordRes.id || '').slice(0,8);
+  msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${safeCode}</b>`;
   msg.classList.remove('text-red-600'); msg.classList.add('text-green-700');
   setCart([]); e.target.reset();
   btn.disabled = false; btn.textContent = 'Đặt hàng';
