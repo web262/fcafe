@@ -388,6 +388,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     msg.textContent = 'Giỏ hàng trống.'; msg.classList.add('text-red-600'); return;
   }
 
+  // read form
   const customer_name  = (qs('input[name="name"]')?.value   || '').trim();
   const phone          = (qs('input[name="phone"]')?.value  || '').trim();
   const addr           = (qs('input[name="address"]')?.value|| '').trim();
@@ -399,21 +400,26 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     msg.classList.add('text-red-600'); return;
   }
 
-  const total_vnd = CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0);
-  const btn = qs('#placeOrder'); btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
+  // compute money values once
+  const subtotal = CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0);
 
-  // ✅ Include address_snapshot for your schema
+  const btn = qs('#placeOrder');
+  btn.disabled = true; btn.textContent = 'Đang tạo đơn…';
+
+  // ✅ send required columns for your schema
   const order = {
     customer_name,
     phone,
-    address: addr,            // optional: if your table also has "address"
-    address_snapshot: addr,   // REQUIRED by your table (the error proves this)
+    address: addr,               // ok to send if column exists
+    address_snapshot: addr,      // required by your DB
     notes: notesInput || null,
     payment_method,
     status: 'pending',
-    total_vnd
+    subtotal,                    // required by your DB (NOT NULL)
+    total_vnd: subtotal          // keep for backward compatibility
   };
 
+  // create order
   const { data:ordRes, error:ordErr } =
     await sb.from('orders').insert(order).select('*').single();
 
@@ -425,7 +431,7 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     return;
   }
 
-  // order_items insert (unchanged)
+  // create items
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
@@ -434,7 +440,6 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     qty: it.qty,
     line_total_vnd: it.price_vnd * it.qty
   }));
-
   const { error:itemErr } = await sb.from('order_items').insert(items);
   if (itemErr){
     console.error('Items insert error:', itemErr);
