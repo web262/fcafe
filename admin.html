@@ -118,6 +118,9 @@ const STATUS_CLASSES = s => {
     : 'st-pending';
 };
 
+const getAddr = (o) => o.address ?? o.address_snapshot ?? '';
+
+
 /* ===== Safe DOM helpers ===== */
 const $ = sel => document.querySelector(sel);
 
@@ -218,7 +221,7 @@ function render(orders){
         <div>
           <div class="text-sm text-neutral-500">#${o.code || (o.id||'').slice(0,8)} • ${new Date(o.created_at).toLocaleString('vi-VN')}</div>
           <div class="font-semibold mt-1">${o.customer_name || '—'} • ${o.phone || ''}</div>
-          <div class="text-sm text-neutral-700">${o.address || ''}</div>
+          <div class="text-sm text-neutral-700">${getAddr(o)}</div>
           ${(o.notes || o.note) ? `<div class="text-sm mt-1 italic text-neutral-600">Ghi chú: ${o.notes || o.note}</div>` : ''}
           <div class="text-xs mt-1 text-neutral-500">Thanh toán: ${o.payment_method || '—'}</div>
         </div>
@@ -229,7 +232,7 @@ function render(orders){
           <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy địa chỉ</button>
             <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
-               href="https://www.google.com/maps/search/${encodeURIComponent(o.address || '')}">Bản đồ</a>
+               href="https://www.google.com/maps/search/${encodeURIComponent(getAddr(o))}">Bản đồ</a>
             <button class="px-3 py-1 rounded-lg bg-black text-white" data-act="print">In hóa đơn</button>
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:paid">Mark Paid</button>
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="set:delivered">Delivered</button>
@@ -249,7 +252,7 @@ function render(orders){
         const act = btn.dataset.act;
 
         if (act === 'copy'){
-          await navigator.clipboard.writeText(o.address || '');
+          await navigator.clipboard.writeText(getAddr(o));
           btn.textContent = 'Đã copy!'; setTimeout(()=>btn.textContent='Copy địa chỉ',1200);
           return;
         }
@@ -323,7 +326,7 @@ function printReceipt(o){
 
       <div style="margin-top:12px">
         <div><strong>${o.customer_name || ''}</strong> • ${o.phone || ''}</div>
-        <div class="muted">${o.address || ''}</div>
+        <div class="muted">${getAddr(o)}</div>
         ${(o.notes || o.note) ? `<div class="muted">Note: ${o.notes || o.note}</div>` : ''}
         <div class="muted">Thanh toán: ${o.payment_method || '—'}</div>
       </div>
@@ -373,7 +376,7 @@ document.getElementById('exportOrders').onclick = async ()=>{
     const base = [
       o.id,
       o.created_at, o.status, o.customer_name||'', o.phone||'',
-      o.address||'', (o.notes||o.note||''), o.payment_method||'',
+      getAddr(o), (o.notes||o.note||''), o.payment_method||'',
       (o.total_vnd!=null ? o.total_vnd : (itemsByOrder[o.id]||[]).reduce((s,it)=>s+(it.line_total_vnd||0),0)),
       parts
     ];
