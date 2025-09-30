@@ -7,7 +7,7 @@
   <meta name="description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi, thanh toán nhanh.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
 
-  <!-- OpenGraph / Twitter -->
+  <!-- Social -->
   <meta property="og:title" content="CAFE — CACAO | Cà phê ngon, giao nhanh">
   <meta property="og:description" content="Cà phê pha phin, đồ uống & đồ ăn nhẹ. Đặt món giao tận nơi.">
   <meta property="og:type" content="website">
@@ -16,81 +16,68 @@
 
   <!-- JSON-LD -->
   <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"CafeOrCoffeeShop",
-    "name":"CAFE — CACAO",
-    "servesCuisine":["Vietnamese","Coffee","Beverages","Snacks"],
-    "priceRange":"₫",
-    "telephone":"+84-982-319-886",
-    "address":{"@type":"PostalAddress","addressLocality":"Hà Nội","addressCountry":"VN"},
-    "url":"./",
-    "sameAs":["https://www.facebook.com/profile.php?id=100063544271103"]
-  }
+  {"@context":"https://schema.org","@type":"CafeOrCoffeeShop","name":"CAFE — CACAO","servesCuisine":["Vietnamese","Coffee","Beverages","Snacks"],"priceRange":"₫","telephone":"+84-982-319-886","address":{"@type":"PostalAddress","addressLocality":"Hà Nội","addressCountry":"VN"},"url":"./","sameAs":["https://www.facebook.com/profile.php?id=100063544271103"]}
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ===== Theme tokens (soft café palette) ===== */
+    /* ===== Café palette (every section gets color) ===== */
     :root{
-      --c-cream:#FFF8ED;         /* background warm */
-      --c-rose:#FFE3E3;          /* food accent */
-      --c-amber:#FFDCA8;         /* coffee accent */
-      --c-mint:#DCFCE7;          /* fresh accent */
-      --c-sky:#E0F2FE;           /* drinks accent */
-      --c-ink:#0A0A0A;           /* headings/buttons */
-      --c-text:#262626;          /* body */
-      --c-muted:#6B7280;         /* secondary */
-      --c-hair:#E5E7EB;          /* hairline */
-      --ring-neutral: rgba(2,6,23,.14); /* replace Tailwind default blue */
-    }
-    /* neutralize blue ring when using ring-1 utilities */
-    .ring-1{ --tw-ring-color: var(--ring-neutral) !important; }
+      --ink:#0b0b0b;
+      --text:#222;
+      --muted:#6b7280;
 
-    .card{transition:transform .16s ease, box-shadow .16s ease}
-    .card:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,0,0,.08)}
-    .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.04), 0 10px 30px rgba(0,0,0,.06)}
+      --amber:#FFB86B;    /* coffee crema */
+      --cacao:#8C5C4A;    /* cacao beans */
+      --rose:#FF8FAB;     /* fruits/pastries */
+      --mint:#34D399;     /* fresh/mint */
+      --sky:#60A5FA;      /* iced drinks */
+      --violet:#A78BFA;   /* accent */
+      --sun:#FFE8A3;      /* warm wash */
+      --foam:#FDF7EE;     /* light foam */
+
+      --ring:rgba(0,0,0,.12);
+      --glass:rgba(255,255,255,.28);
+    }
+    .ring-1{ --tw-ring-color: var(--ring) !important; }
+    .glass{ backdrop-filter:saturate(130%) blur(10px); background:var(--glass); }
+
+    .card{transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover{transform:translateY(-3px); box-shadow:0 16px 36px rgba(0,0,0,.12)}
+    .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.04), 0 12px 38px rgba(0,0,0,.10)}
     .fade-in{animation:fade .45s ease both}
-    @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
-
-    /* Subtle decorative blobs per section */
-    .blob{
-      background:
-        radial-gradient(600px 200px at -5% -10%, rgba(255,220,168,.55), transparent 60%),
-        radial-gradient(450px 180px at 110% 10%, rgba(224,242,254,.65), transparent 60%),
-        radial-gradient(520px 220px at 50% 120%, rgba(255,227,227,.55), transparent 65%);
-    }
-    .stripe{
-      background:
-        linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 60%, rgba(0,0,0,.03) 60%, rgba(0,0,0,.03) 100%),
-        linear-gradient(135deg, #fff 0, #fff 100%);
-      background-size: 100% 36px, 100% 100%;
-    }
+    @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
   </style>
 </head>
 
-<body class="bg-[var(--c-cream)] text-[var(--c-text)] overflow-x-hidden" translate="no">
+<body class="text-[var(--text)] overflow-x-hidden"
+      style="background:
+        radial-gradient(1200px 500px at -10% -20%, #FFE8A3 0, #FFE8A3 25%, transparent 60%),
+        radial-gradient(900px 450px at 110% 0%, #FF8FAB55 0, transparent 60%),
+        linear-gradient(180deg, #FFF 0, #FDF7EE 100%)"
+      translate="no">
 
-  <!-- NAV -->
-  <header class="sticky top-0 z-50 backdrop-blur border-b bg-white/70">
+  <!-- NAV (colored chip) -->
+  <header class="sticky top-0 z-50 border-b"
+           style="background:linear-gradient(90deg,#fff8,#fff8), linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
     <div class="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between">
       <a href="./" class="flex items-center gap-2">
-        <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
+        <div class="h-8 w-8 rounded-xl bg-[var(--ink)] text-white grid place-items-center font-bold">C</div>
         <div>
           <div class="font-semibold tracking-wide">CAFE — CACAO</div>
-          <div id="sub_small" class="text-xs text-neutral-500">Đặt món giao tận nơi</div>
+          <div id="sub_small" class="text-xs text-[var(--muted)]">Đặt món giao tận nơi</div>
         </div>
       </a>
       <nav class="hidden md:flex items-center gap-6 text-sm">
-        <a class="hover:opacity-80" href="#about">Giới thiệu</a>
-        <a class="hover:opacity-80" href="#menu">Menu</a>
-        <a class="hover:opacity-80" href="#visit">Địa chỉ</a>
+        <a class="hover:opacity-90" href="#about">Giới thiệu</a>
+        <a class="hover:opacity-90" href="#menu">Menu</a>
+        <a class="hover:opacity-90" href="#visit">Địa chỉ</a>
       </nav>
       <div class="flex items-center gap-2">
-        <a href="order.html" class="hidden sm:inline-flex bg-[var(--c-ink)] text-white px-3 py-1.5 rounded-lg text-sm">Đặt hàng / Order</a>
-        <div class="rounded-xl px-1 py-1 bg-white border ring-1">
+        <a href="order.html" class="hidden sm:inline-flex bg-[var(--ink)] text-white px-3 py-1.5 rounded-lg text-sm">Đặt hàng / Order</a>
+        <div class="rounded-xl px-1 py-1 glass ring-1">
           <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium">VI</button>
           <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium">EN</button>
         </div>
@@ -98,96 +85,101 @@
     </div>
   </header>
 
-  <!-- HERO (warm gradient) -->
-  <section class="blob">
-    <div class="max-w-screen-xl mx-auto px-4 pt-10 pb-6">
-      <div class="grid lg:grid-cols-2 gap-8 items-center">
-        <div>
-          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full ring-1 bg-white/70 text-sm">
-            <span class="text-amber-600">★</span> Great taste — Fast delivery
-          </span>
-          <h1 id="hero_title" class="mt-4 text-4xl sm:text-5xl font-extrabold leading-tight text-[var(--c-ink)]">
-            CAFE — CACAO<br>
-            <span id="hero_title_sub" class="text-neutral-600 font-medium">Cà phê ngon, giao nhanh</span>
-          </h1>
-          <p id="hero_sub" class="mt-3 text-neutral-700 text-lg">
-            Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.
-          </p>
-
-          <div class="mt-6 flex gap-3">
-            <a href="order.html" class="bg-[var(--c-ink)] text-white px-5 py-3 rounded-xl font-medium">Đặt hàng ngay</a>
-            <a href="#menu" class="px-5 py-3 rounded-xl font-medium border bg-white ring-1">Xem menu</a>
-          </div>
-
-          <!-- Quick chips -->
-          <div class="mt-5 flex flex-wrap gap-2">
-            <span class="px-3 py-1.5 rounded-full text-sm ring-1 bg-[var(--c-amber)]/50">Pha phin</span>
-            <span class="px-3 py-1.5 rounded-full text-sm ring-1 bg-[var(--c-sky)]/50">Smoothies</span>
-            <span class="px-3 py-1.5 rounded-full text-sm ring-1 bg-[var(--c-rose)]/50">Bánh mì</span>
-            <span class="px-3 py-1.5 rounded-full text-sm ring-1 bg-[var(--c-mint)]/50">Xôi</span>
-          </div>
+  <!-- HERO (bold gradient) -->
+  <section class="pt-10 pb-8"
+           style="background:
+             radial-gradient(900px 360px at 20% 10%, #FFE8A3 0, transparent 70%),
+             radial-gradient(1000px 420px at 90% 0%, #60A5FA33 0, transparent 65%)">
+    <div class="max-w-screen-xl mx-auto px-4 grid lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass ring-1 text-sm">
+          <span class="text-[var(--cacao)]">★</span> Great taste — Fast delivery
+        </span>
+        <h1 id="hero_title" class="mt-4 text-4xl sm:text-5xl font-extrabold leading-tight text-[var(--ink)]">
+          CAFE — CACAO<br><span id="hero_title_sub" class="font-medium"
+          style="color:#2f2f2f">Cà phê ngon, giao nhanh</span>
+        </h1>
+        <p id="hero_sub" class="mt-3 text-lg text-[var(--ink)]/80">
+          Chọn món nóng hổi, giao tận nơi. Đặt hàng trực tuyến dễ dàng.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="order.html" class="px-5 py-3 rounded-xl font-medium text-white"
+             style="background:linear-gradient(135deg,#0b0b0b 0,#3b3b3b 100%)">Đặt hàng ngay</a>
+          <a href="#menu" class="px-5 py-3 rounded-xl font-medium glass ring-1">Xem menu</a>
         </div>
 
-        <div class="rounded-3xl bg-white/80 border ring-1 shadow-soft p-4">
-          <img class="rounded-2xl w-full object-cover h-72"
-               src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop"
-               alt="Coffee and pastries" />
-          <div class="text-xs text-neutral-500 text-center mt-2">Ảnh minh họa</div>
+        <div class="mt-6 flex flex-wrap gap-2 text-sm">
+          <span class="px-3 py-1.5 rounded-full ring-1" style="background:#FFB86B40">Phin</span>
+          <span class="px-3 py-1.5 rounded-full ring-1" style="background:#60A5FA40">Smoothies</span>
+          <span class="px-3 py-1.5 rounded-full ring-1" style="background:#FF8FAB40">Bánh mì</span>
+          <span class="px-3 py-1.5 rounded-full ring-1" style="background:#34D39940">Xôi</span>
         </div>
       </div>
 
-      <!-- Contact tiles -->
-      <div class="mt-6 grid md:grid-cols-3 gap-3">
-        <a href="https://zalo.me/0982319886" target="_blank" class="rounded-2xl ring-1 bg-white p-4 flex items-center justify-between">
-          <div>
-            <div class="text-neutral-500 text-sm">Zalo</div>
-            <div class="font-semibold">0982319886</div>
-          </div>
-          <span>→</span>
-        </a>
-        <a href="tel:0982319886" class="rounded-2xl ring-1 bg-white p-4 flex items-center justify-between">
-          <div>
-            <div class="text-neutral-500 text-sm">Hotline</div>
-            <div class="font-semibold">Gọi / Call</div>
-          </div>
-          <span>→</span>
-        </a>
-        <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="rounded-2xl ring-1 bg-white p-4 flex items-center justify-between">
-          <div>
-            <div class="text-neutral-500 text-sm">Facebook</div>
-            <div class="font-semibold">Theo dõi ưu đãi</div>
-          </div>
-          <span>→</span>
-        </a>
+      <div class="rounded-3xl glass ring-1 shadow-soft p-4">
+        <img class="rounded-2xl w-full object-cover h-72"
+             src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1600&auto=format&fit=crop"
+             alt="Coffee and pastries" />
+        <div class="text-xs text-[var(--muted)] text-center mt-2">Ảnh minh họa</div>
       </div>
+    </div>
+
+    <!-- Quick contacts (colored) -->
+    <div class="max-w-screen-xl mx-auto px-4 mt-6 grid md:grid-cols-3 gap-3">
+      <a href="https://zalo.me/0982319886" target="_blank"
+         class="rounded-2xl p-4 ring-1 card"
+         style="background:linear-gradient(135deg,#FFE8A3 0,#FFB86B 100%);">
+        <div class="flex items-center justify-between">
+          <div><div class="text-sm opacity-80">Zalo</div><div class="font-semibold">0982319886</div></div><span>→</span>
+        </div>
+      </a>
+      <a href="tel:0982319886"
+         class="rounded-2xl p-4 ring-1 card"
+         style="background:linear-gradient(135deg,#D1FAE5 0,#34D399 100%);">
+        <div class="flex items-center justify-between">
+          <div><div class="text-sm opacity-80">Hotline</div><div class="font-semibold">Gọi / Call</div></div><span>→</span>
+        </div>
+      </a>
+      <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank"
+         class="rounded-2xl p-4 ring-1 card"
+         style="background:linear-gradient(135deg,#DBEAFE 0,#60A5FA 100%);">
+        <div class="flex items-center justify-between">
+          <div><div class="text-sm opacity-80">Facebook</div><div class="font-semibold">Theo dõi ưu đãi</div></div><span>→</span>
+        </div>
+      </a>
     </div>
   </section>
 
-  <!-- CATEGORIES (colored cards) -->
-  <section id="menu" class="bg-white/60">
-    <div class="max-w-screen-xl mx-auto px-4 py-10">
+  <!-- CATEGORIES (two strong color tiles) -->
+  <section id="menu" class="py-10"
+           style="background:
+             radial-gradient(700px 300px at 10% 20%, #FF8FAB33 0, transparent 70%),
+             radial-gradient(700px 300px at 90% 80%, #60A5FA33 0, transparent 70%)">
+    <div class="max-w-screen-xl mx-auto px-4">
       <div class="flex items-center justify-between">
         <h2 id="sec_menu" class="text-2xl font-bold">Categories</h2>
         <a href="order.html" class="text-sm underline">Tất cả món</a>
       </div>
 
       <div class="mt-4 grid sm:grid-cols-2 gap-4">
-        <a href="order.html?category=Food" class="card rounded-2xl border ring-1 p-5 bg-[var(--c-rose)]/35">
+        <a href="order.html?category=Food" class="card rounded-2xl p-5 ring-1 text-[var(--ink)]"
+           style="background:linear-gradient(135deg,#FFE4EA 0,#FF8FAB 100%);">
           <div class="flex items-center gap-4">
-            <div class="h-12 w-12 rounded-xl bg-[var(--c-rose)] grid place-items-center">🍱</div>
+            <div class="h-12 w-12 rounded-xl grid place-items-center bg-white/30">🍱</div>
             <div>
               <div class="text-lg font-semibold">Đồ ăn / Food</div>
-              <div class="text-neutral-600 text-sm">Bánh mì, Mì, Xôi, Ăn vặt, Món kèm</div>
+              <div class="opacity-80 text-sm">Bánh mì, Mì, Xôi, Ăn vặt, Món kèm</div>
             </div>
           </div>
         </a>
 
-        <a href="order.html?category=Drinks" class="card rounded-2xl border ring-1 p-5 bg-[var(--c-sky)]/40">
+        <a href="order.html?category=Drinks" class="card rounded-2xl p-5 ring-1 text-[var(--ink)]"
+           style="background:linear-gradient(135deg,#E1F0FF 0,#60A5FA 100%);">
           <div class="flex items-center gap-4">
-            <div class="h-12 w-12 rounded-xl bg-[var(--c-sky)] grid place-items-center">🥤</div>
+            <div class="h-12 w-12 rounded-xl grid place-items-center bg-white/30">🥤</div>
             <div>
               <div class="text-lg font-semibold">Đồ uống / Drinks</div>
-              <div class="text-neutral-600 text-sm">Cà phê, Smoothies, Nước ép…</div>
+              <div class="opacity-80 text-sm">Cà phê, Smoothies, Nước ép…</div>
             </div>
           </div>
         </a>
@@ -195,53 +187,60 @@
     </div>
   </section>
 
-  <!-- HIGHLIGHTS (soft stripe background) -->
-  <section class="stripe">
-    <div class="max-w-screen-xl mx-auto px-4 py-10">
+  <!-- HIGHLIGHTS (colorful stripes + glass cards) -->
+  <section class="py-10"
+           style="background:
+             linear-gradient(180deg,#fff0 0,#fff0 42%,rgba(0,0,0,.03) 42%,rgba(0,0,0,.03) 44%,#fff0 44%,#fff0 100%),
+             linear-gradient(90deg,#FFE8A3 0,#FFB86B 20%,#FF8FAB 40%,#60A5FA 65%,#A78BFA 85%,#D1FAE5 100%)">
+    <div class="max-w-screen-xl mx-auto px-4">
       <div class="flex items-center justify-between">
         <h3 id="sec_high" class="text-xl font-semibold">Món nổi bật</h3>
         <a href="order.html" class="text-sm underline">View all</a>
       </div>
 
-      <!-- Loading skeleton -->
-      <div id="highlights_skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="rounded-2xl bg-white border ring-1 p-4 animate-pulse">
-          <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
-          <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-          <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+      <div id="highlights_skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        <div class="rounded-2xl glass ring-1 p-4 animate-pulse">
+          <div class="w-full h-32 bg-white/50 rounded-xl"></div>
+          <div class="h-4 bg-white/50 rounded mt-3 w-3/5"></div>
+          <div class="h-3 bg-white/50 rounded mt-2 w-2/5"></div>
         </div>
-        <div class="rounded-2xl bg-white border ring-1 p-4 animate-pulse">
-          <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
-          <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-          <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+        <div class="rounded-2xl glass ring-1 p-4 animate-pulse">
+          <div class="w-full h-32 bg-white/50 rounded-xl"></div>
+          <div class="h-4 bg-white/50 rounded mt-3 w-3/5"></div>
+          <div class="h-3 bg-white/50 rounded mt-2 w-2/5"></div>
         </div>
-        <div class="rounded-2xl bg-white border ring-1 p-4 animate-pulse">
-          <div class="w-full h-32 bg-neutral-100 rounded-xl"></div>
-          <div class="h-4 bg-neutral-100 rounded mt-3 w-3/5"></div>
-          <div class="h-3 bg-neutral-100 rounded mt-2 w-2/5"></div>
+        <div class="rounded-2xl glass ring-1 p-4 animate-pulse">
+          <div class="w-full h-32 bg-white/50 rounded-xl"></div>
+          <div class="h-4 bg-white/50 rounded mt-3 w-3/5"></div>
+          <div class="h-3 bg-white/50 rounded mt-2 w-2/5"></div>
         </div>
       </div>
 
-      <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+      <div id="highlights" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 hidden"></div>
       <div id="highlights_error" class="hidden mt-3 text-sm text-red-600"></div>
     </div>
   </section>
 
-  <!-- ABOUT / HOURS (alternating color blocks) -->
-  <section id="about" class="bg-white/70">
-    <div class="max-w-screen-xl mx-auto px-4 py-12 grid lg:grid-cols-2 gap-6">
-      <div class="rounded-2xl border ring-1 p-6 bg-[var(--c-amber)]/35">
+  <!-- ABOUT / HOURS (two bold blocks) -->
+  <section id="about" class="py-12"
+           style="background:
+             radial-gradient(700px 320px at 10% 90%, #34D39933 0, transparent 70%),
+             radial-gradient(700px 320px at 95% 15%, #A78BFA33 0, transparent 70%)">
+    <div class="max-w-screen-xl mx-auto px-4 grid lg:grid-cols-2 gap-6">
+      <div class="rounded-2xl p-6 ring-1 text-[var(--ink)] card"
+           style="background:linear-gradient(135deg,#FFF1D6 0,#FFB86B 100%);">
         <h3 class="text-xl font-semibold mb-2">Về chúng tôi / About us</h3>
-        <p class="text-neutral-700 leading-relaxed">
+        <p class="leading-relaxed">
           CAFE — CACAO phục vụ cà phê pha phin, đồ uống chai sẵn và nhiều món ăn nhẹ.
           Chúng tôi cam kết nguyên liệu chất lượng và giao hàng nhanh chóng.
         </p>
-        <p class="mt-3 text-neutral-700">Theo dõi Facebook và Zalo để nhận khuyến mãi mới nhất!</p>
+        <p class="mt-3">Theo dõi Facebook và Zalo để nhận khuyến mãi mới nhất!</p>
       </div>
 
-      <div class="rounded-2xl border ring-1 p-6 bg-[var(--c-mint)]/45">
+      <div class="rounded-2xl p-6 ring-1 text-[var(--ink)] card"
+           style="background:linear-gradient(135deg,#E6FFE8 0,#34D399 100%);">
         <h3 class="text-xl font-semibold mb-2">Giờ mở cửa / Opening hours</h3>
-        <ul class="text-neutral-700 space-y-1">
+        <ul class="space-y-1">
           <li>Mon – Fri: 7:00 – 21:00</li>
           <li>Sat – Sun: 8:00 – 21:00</li>
           <li>Hotline: <a class="underline" href="tel:0982319886">0982319886</a></li>
@@ -250,11 +249,12 @@
     </div>
   </section>
 
-  <!-- VISIT -->
-  <section id="visit" class="bg-white">
-    <div class="max-w-screen-xl mx-auto px-4 py-12">
-      <h3 class="text-xl font-semibold mb-3">Địa chỉ / Visit us</h3>
-      <div class="rounded-2xl overflow-hidden border ring-1 bg-[var(--c-sky)]/40">
+  <!-- VISIT (cool blue block) -->
+  <section id="visit" class="py-12"
+           style="background:linear-gradient(135deg,#DBEAFE 0,#60A5FA 100%)">
+    <div class="max-w-screen-xl mx-auto px-4">
+      <h3 class="text-xl font-semibold mb-3 text-[var(--ink)]">Địa chỉ / Visit us</h3>
+      <div class="rounded-2xl overflow-hidden ring-1 glass">
         <iframe class="w-full h-72"
           src="https://www.google.com/maps?q=Hanoi&output=embed"
           loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -262,8 +262,9 @@
     </div>
   </section>
 
-  <footer class="border-t bg-white">
-    <div class="max-w-screen-xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+  <footer class="border-t"
+          style="background:linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
+    <div class="max-w-screen-xl mx-auto px-4 py-6 text-sm text-[var(--ink)]/80 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
       <div>© <span id="year"></span> CAFE — CACAO</div>
       <div class="flex gap-3">
         <a class="underline" href="order.html">Đặt hàng / Order</a>
@@ -274,8 +275,8 @@
 
   <!-- Floating contact -->
   <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-    <a href="https://zalo.me/0982319886" target="_blank" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center ring-1" title="Zalo">ZA</a>
-    <a href="tel:0982319886" class="shadow-lg rounded-full bg-white border w-12 h-12 grid place-items-center ring-1" title="Call" aria-label="Call">
+    <a href="https://zalo.me/0982319886" target="_blank" class="shadow-lg rounded-full glass ring-1 w-12 h-12 grid place-items-center" title="Zalo">ZA</a>
+    <a href="tel:0982319886" class="shadow-lg rounded-full glass ring-1 w-12 h-12 grid place-items-center" title="Call" aria-label="Call">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 8 7 15 15 15l2-3-4-3-3 2a12 12 0 0 1-7-7l2-3-3-4-2 3Z" stroke="currentColor" stroke-width="1.7"/></svg>
     </a>
     <a href="https://www.facebook.com/profile.php?id=100063544271103" target="_blank" class="shadow-lg rounded-full bg-[#1877F2] text-white w-12 h-12 grid place-items-center" title="Facebook">f</a>
@@ -305,7 +306,7 @@ document.getElementById('btnVI').onclick = ()=>{ lang='vi'; localStorage.setItem
 document.getElementById('btnEN').onclick = ()=>{ lang='en'; localStorage.setItem('lang','en'); syncLang(); };
 syncLang();
 
-/* ================== Highlights ================== */
+/* ================== Highlights (unchanged backend) ================== */
 async function loadHighlights(){
   const skel = document.getElementById('highlights_skeleton');
   const list = document.getElementById('highlights');
@@ -323,7 +324,8 @@ async function loadHighlights(){
     sort_order:('sort_order' in p)?p.sort_order:100
   });
 
-  const rows=(data||[]).map(norm).filter(r=>r.is_available).sort((a,b)=> (a.sort_order??100)-(b.sort_order??100));
+  const rows=(data||[]).map(norm).filter(r=>r.is_available)
+    .sort((a,b)=> (a.sort_order??100)-(b.sort_order??100));
 
   list.innerHTML='';
   rows.forEach(p=>{
@@ -335,12 +337,13 @@ async function loadHighlights(){
 
     const card=document.createElement('a');
     card.href=href.toString();
-    card.className='card rounded-2xl bg-white border ring-1 overflow-hidden fade-in';
+    card.className='card rounded-2xl glass ring-1 overflow-hidden fade-in';
     card.innerHTML=`
-      ${p.image_url?`<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`:`<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
+      ${p.image_url?`<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
+                   :`<div class="w-full h-40 bg-white/40 grid place-items-center text-neutral-500">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
         <div class="font-semibold line-clamp-2">${title}</div>
-        <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
+        <div class="text-xs opacity-80 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}</div>
         <div class="mt-2 font-semibold">${moneyK(p.price_vnd)}</div>
       </div>`;
     list.appendChild(card);
