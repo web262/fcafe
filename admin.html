@@ -5,16 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Orders | CAFE — CACAO</title>
 
-  <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    :root{
-      --ink:#0b0b0b;
-      --muted:#64748b;
-      --amber:#FFB86B; --rose:#FF8FAB; --sky:#60A5FA; --violet:#A78BFA; --mint:#34D399;
-    }
+    :root{ --muted:#64748b; }
     body{
       color:#111827;
       background:
@@ -30,12 +25,9 @@
     .status{border:1px solid rgba(15,23,42,.12); padding:.15rem .5rem; border-radius:9999px; font-size:.75rem}
     .st-pending{background:#fff;border-color:#e5e7eb}
     .st-paid{background:#E6FFE8;border-color:#34D399}
-    .st-delivered{background:#E8F1FF;border-color:#60A5FA}
-    .st-cancelled{background:#FFE8EC;border-color:#FF8FAB}
-    @media print{
-      body{background:#fff}
-      .no-print{display:none!important}
-    }
+    .st-delivered,.st-completed{background:#E8F1FF;border-color:#60A5FA}
+    .st-cancelled,.st-canceled{background:#FFE8EC;border-color:#FF8FAB}
+    @media print{ .no-print{display:none!important} body{background:#fff} }
   </style>
 </head>
 <body>
@@ -79,7 +71,6 @@
   <!-- List -->
   <main class="max-w-7xl mx-auto px-4 py-6">
     <div id="list" class="grid gap-4">
-      <!-- loading skeleton -->
       <div class="grid sm:grid-cols-2 gap-4" id="skeleton">
         <div class="rounded-2xl border p-4 bg-white animate-pulse">
           <div class="h-4 bg-neutral-100 rounded w-3/5"></div>
@@ -96,7 +87,6 @@
     <p id="empty" class="hidden text-neutral-500 mt-10 text-center">Chưa có đơn hàng.</p>
   </main>
 
-  <!-- Footer -->
   <footer class="border-t"
           style="background:linear-gradient(90deg,#FFE8A3 0,#FFB86B 22%,#FF8FAB 48%,#60A5FA 76%,#A78BFA 100%)">
     <div class="max-w-7xl mx-auto px-4 py-5 text-sm text-neutral-800/80">
@@ -115,14 +105,30 @@ document.getElementById('year').textContent = new Date().getFullYear();
 const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
+// Accept both our UI values and common DB variants
+const STATUS_FALLBACK = {
+  delivered: 'completed',
+  cancelled: 'canceled'
+};
+const STATUS_CLASSES = s => {
+  const k = (s||'pending').toLowerCase();
+  return k==='paid' ? 'st-paid'
+    : (k==='delivered'||k==='completed') ? 'st-delivered'
+    : (k==='cancelled'||k==='canceled') ? 'st-cancelled'
+    : 'st-pending';
+};
+
+/* ===== Safe DOM helpers ===== */
+const $ = sel => document.querySelector(sel);
+
 /* ===== fetch order_items with schema fallback ===== */
 async function fetchOrderItems(orderIds){
-  // Try NEW schema
+  // Newer schema
   let res = await sb.from('order_items')
     .select('order_id, name_snapshot, price_vnd, qty, line_total_vnd')
     .in('order_id', orderIds);
 
-  // If bad column (42703), try OLD schema and normalize
+  // Fallback to older schema with unit_price/name
   if (res.error && res.error.code === '42703') {
     res = await sb.from('order_items')
       .select('order_id, name, unit_price, qty')
@@ -133,7 +139,7 @@ async function fetchOrderItems(orderIds){
         name_snapshot: it.name,
         price_vnd: it.unit_price,
         qty: it.qty,
-        line_total_vnd: (it.unit_price || 0) * (it.qty || 0)
+        line_total_vnd: (Number(it.unit_price)||0) * (Number(it.qty)||0)
       }));
     }
   }
@@ -142,15 +148,21 @@ async function fetchOrderItems(orderIds){
 
 /* ========= Load ========= */
 async function load(){
-  document.getElementById('skeleton').classList.remove('hidden');
-  const q    = document.getElementById('q').value.trim().toLowerCase();
-  const from = document.getElementById('dateFrom').value;
-  const to   = document.getElementById('dateTo').value;
+  const sk = $('#skeleton'); if (sk) sk.classList.remove('hidden');
+
+  const q    = $('#q').value.trim().toLowerCase();
+  const from = $('#dateFrom').value;
+  const to   = $('#dateTo').value;
 
   let oQuery = sb.from('orders').select('*').order('created_at', { ascending:false });
   if (from) oQuery = oQuery.gte('created_at', from);
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
-  if (statusFilter !== 'all') oQuery = oQuery.eq('status', statusFilter);
+
+  if (statusFilter !== 'all') {
+    // include fallback variant to keep filtering consistent
+    const alt = STATUS_FALLBACK[statusFilter];
+    oQuery = alt ? oQuery.in('status', [statusFilter, alt]) : oQuery.eq('status', statusFilter);
+  }
 
   const { data: orders, error: oErr } = await oQuery;
   if (oErr){ console.error(oErr); alert('Tải đơn hàng thất bại'); return; }
@@ -179,9 +191,10 @@ async function load(){
 
 /* ========= Render ========= */
 function render(orders){
-  const list = document.getElementById('list');
-  const empty = document.getElementById('empty');
-  document.getElementById('skeleton').classList.add('hidden');
+  const list = $('#list');
+  const empty = $('#empty');
+  const sk = $('#skeleton'); if (sk) sk.classList.add('hidden');
+
   list.innerHTML = '';
   empty.classList.toggle('hidden', orders.length>0);
 
@@ -193,10 +206,10 @@ function render(orders){
       </div>
     `).join('');
 
-    const subtotal = (o.order_items||[]).reduce((s,it)=> s + (it.line_total_vnd||0), 0);
+    const subtotalCalc = (o.order_items||[]).reduce((s,it)=> s + (Number(it.line_total_vnd)||0), 0);
+    const totalDisplay = (o.total_vnd!=null ? o.total_vnd : subtotalCalc);
 
     const st = (o.status||'pending').toLowerCase();
-    const stCls = st==='paid' ? 'st-paid' : st==='delivered' ? 'st-delivered' : st==='cancelled' ? 'st-cancelled' : 'st-pending';
 
     const card = document.createElement('div');
     card.className = 'card bg-white border rounded-2xl p-4';
@@ -210,9 +223,9 @@ function render(orders){
           <div class="text-xs mt-1 text-neutral-500">Thanh toán: ${o.payment_method || '—'}</div>
         </div>
         <div class="text-right min-w-[180px]">
-          <div class="text-neutral-600 text-sm">Tạm tính: ${money(subtotal)}</div>
-          <div class="font-semibold text-lg mt-1">Tổng: ${money(o.total_vnd)}</div>
-          <div class="status ${stCls} mt-1 inline-block">${o.status}</div>
+          <div class="text-neutral-600 text-sm">Tạm tính: ${money(subtotalCalc)}</div>
+          <div class="font-semibold text-lg mt-1">Tổng: ${money(totalDisplay)}</div>
+          <div class="status ${STATUS_CLASSES(st)} mt-1 inline-block">${st}</div>
           <div class="no-print mt-2 flex flex-wrap gap-2 justify-end">
             <button class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" data-act="copy">Copy địa chỉ</button>
             <a class="px-3 py-1 rounded-lg border bg-white hover:bg-neutral-50" target="_blank"
@@ -234,16 +247,36 @@ function render(orders){
     card.querySelectorAll('[data-act]').forEach(btn=>{
       btn.onclick = async ()=>{
         const act = btn.dataset.act;
+
         if (act === 'copy'){
           await navigator.clipboard.writeText(o.address || '');
           btn.textContent = 'Đã copy!'; setTimeout(()=>btn.textContent='Copy địa chỉ',1200);
-        } else if (act === 'print'){
-          printReceipt(o);
-        } else if (act.startsWith('set:')){
-          const newStatus = act.split(':')[1];
+          return;
+        }
+
+        if (act === 'print'){ printReceipt(o); return; }
+
+        if (act.startsWith('set:')){
+          const want = act.split(':')[1];              // paid/delivered/cancelled
+          const tryStatus = async (value) =>
+            await sb.from('orders').update({ status:value }).eq('id', o.id);
+
           btn.disabled = true;
-          const { error } = await sb.from('orders').update({ status:newStatus }).eq('id', o.id);
+
+          // 1st attempt: as requested
+          let { error } = await tryStatus(want);
+
+          // If the DB has a different spelling/value, retry once with a fallback
+          if (error && (error.code === '23514' || (error.message||'').includes('orders_status_check'))) {
+            const alt = STATUS_FALLBACK[want];
+            if (alt) {
+              const retry = await tryStatus(alt);
+              error = retry.error; // overwrite
+            }
+          }
+
           btn.disabled = false;
+
           if (error){ alert('Cập nhật trạng thái thất bại'); console.error(error); }
           else load();
         }
@@ -266,6 +299,7 @@ function printReceipt(o){
     </tr>
   `).join('');
   const subtotal = items.reduce((s,it)=> s + (it.line_total_vnd||it.price_vnd*it.qty||0), 0);
+  const totalDisplay = (o.total_vnd!=null ? o.total_vnd : subtotal);
 
   const wnd = window.open('', '_blank', 'width=420,height=620');
   wnd.document.write(`
@@ -301,7 +335,7 @@ function printReceipt(o){
         <tbody>${rows}</tbody>
         <tfoot>
           <tr class="totals"><td colspan="3" style="text-align:right">Tạm tính</td><td style="text-align:right">${money(subtotal)}</td></tr>
-          <tr class="totals"><td colspan="3" style="text-align:right">Tổng</td><td style="text-align:right">${money(o.total_vnd)}</td></tr>
+          <tr class="totals"><td colspan="3" style="text-align:right">Tổng</td><td style="text-align:right">${money(totalDisplay)}</td></tr>
         </tfoot>
       </table>
 
@@ -339,7 +373,9 @@ document.getElementById('exportOrders').onclick = async ()=>{
     const base = [
       o.id,
       o.created_at, o.status, o.customer_name||'', o.phone||'',
-      o.address||'', (o.notes||o.note||''), o.payment_method||'', o.total_vnd||0, parts
+      o.address||'', (o.notes||o.note||''), o.payment_method||'',
+      (o.total_vnd!=null ? o.total_vnd : (itemsByOrder[o.id]||[]).reduce((s,it)=>s+(it.line_total_vnd||0),0)),
+      parts
     ];
     if (hasCode) base.splice(1,0,(o.code||'')); // insert code after id
     rows.push(base);
@@ -353,9 +389,9 @@ document.getElementById('exportOrders').onclick = async ()=>{
 };
 
 /* ========= Filters ========= */
-document.getElementById('q').addEventListener('input', load);
-document.getElementById('dateFrom').addEventListener('change', load);
-document.getElementById('dateTo').addEventListener('change', load);
+$('#q').addEventListener('input', load);
+$('#dateFrom').addEventListener('change', load);
+$('#dateTo').addEventListener('change', load);
 document.querySelectorAll('[data-st]').forEach(b=>{
   b.onclick = ()=>{
     document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('active'));
