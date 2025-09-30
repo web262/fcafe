@@ -5,87 +5,94 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CAFE — CACAO | Đặt hàng</title>
   <meta name="description" content="Đặt đồ uống và đồ ăn từ CAFE — CACAO. Thanh toán nhanh, giao tận nơi.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%23000%22/><text x=%2250%22 y=%2262%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-family=%22Inter,Arial%22>C</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root{--ring:rgba(15,23,42,.08)}
+    .ring-1{box-shadow:0 0 0 1px var(--ring) inset}
     .card{transition:transform .16s ease, box-shadow .16s ease}
-    .card:hover{transform:translateY(-2px); box-shadow:0 10px 22px rgba(0,0,0,.08)}
-    .shadow-soft{box-shadow:0 1px 0 rgba(20,20,20,.05), 0 8px 32px rgba(0,0,0,.06)}
-    .pill{transition:background .15s ease, color .15s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 16px 36px rgba(0,0,0,.08)}
+    .soft{box-shadow:0 1px 0 rgba(0,0,0,.05), 0 12px 40px rgba(0,0,0,.06)}
+    .fade{animation:fade .28s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .pill{transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+    .sticky-col{position:sticky; top:88px}
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900" translate="no">
-  <!-- NAV -->
-  <header class="sticky top-0 z-40 backdrop-blur bg-white/80 border-b">
-    <div class="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="index.html" class="flex items-center gap-2">
-        <div class="h-8 w-8 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
-        <div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-white/70 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-4 h-[64px] flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-black text-white grid place-items-center font-bold">C</div>
+        <div class="leading-tight">
           <div class="font-semibold tracking-wide">CAFE — CACAO</div>
           <div class="text-xs text-neutral-500">Đặt hàng trực tuyến</div>
         </div>
       </a>
       <div class="flex items-center gap-2">
-        <button id="btnVI" class="px-2 py-1 rounded-lg text-sm font-medium border">VI</button>
-        <button id="btnEN" class="px-2 py-1 rounded-lg text-sm font-medium border">EN</button>
+        <button id="btnVI" class="px-2.5 py-1.5 rounded-lg text-sm border bg-white">VI</button>
+        <button id="btnEN" class="px-2.5 py-1.5 rounded-lg text-sm border bg-white">EN</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-screen-2xl mx-auto px-4 py-4">
-    <div class="grid lg:grid-cols-[1fr_360px] gap-6">
-      <!-- LEFT: menu -->
+  <!-- CONTENT -->
+  <main class="max-w-6xl mx-auto px-4 py-5">
+    <div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
+      <!-- LEFT -->
       <section>
-        <!-- Filters -->
-        <div class="rounded-2xl bg-white border shadow-soft p-3">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div class="flex gap-2">
-              <button data-cat="Food"   class="cat pill px-3 py-1.5 rounded-lg border bg-white font-medium">🍜 Food</button>
-              <button data-cat="Drinks" class="cat pill px-3 py-1.5 rounded-lg border bg-white font-medium">🥤 Drinks</button>
-              <button data-cat="All"    class="cat pill px-3 py-1.5 rounded-lg border bg-white">Tất cả</button>
+        <!-- Top controls -->
+        <div class="bg-white rounded-2xl ring-1 soft p-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div class="flex flex-wrap gap-2">
+              <button data-cat="Food" class="cat pill px-3 py-1.5 rounded-lg bg-white ring-1 font-medium">🍜 Food</button>
+              <button data-cat="Drinks" class="cat pill px-3 py-1.5 rounded-lg bg-white ring-1 font-medium">🥤 Drinks</button>
+              <button data-cat="All" class="cat pill px-3 py-1.5 rounded-lg bg-white ring-1">Tất cả</button>
             </div>
             <div class="flex-1"></div>
-            <div class="relative w-full sm:w-80">
-              <input id="search" type="search" class="w-full rounded-xl border px-3 py-2 pr-9" placeholder="Tìm món, ví dụ: cà phê, xôi, bánh mì…">
+            <div class="relative w-full sm:w-96">
+              <input id="search" type="search" class="w-full rounded-xl border px-3 py-2 pr-10" placeholder="Tìm món, ví dụ: cà phê, xôi, bánh mì…">
               <svg class="absolute right-3 top-2.5" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="1.6"/></svg>
             </div>
           </div>
-
-          <!-- Subcategory pills (dynamic) -->
+          <!-- Dynamic subcategory pills -->
           <div id="subcats" class="mt-3 flex flex-wrap gap-2"></div>
         </div>
 
         <!-- Product grid -->
         <div id="grid" class="mt-4 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <!-- skeletons -->
-          <div class="rounded-2xl bg-white border p-4 animate-pulse">
-            <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
-            <div class="h-4 bg-neutral-100 rounded mt-3 w-4/5"></div>
+          <div class="bg-white ring-1 rounded-2xl p-4 animate-pulse">
+            <div class="w-full h-40 bg-neutral-100 rounded-xl"></div>
+            <div class="h-4 bg-neutral-100 rounded mt-3 w-3/4"></div>
             <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
             <div class="mt-3 h-9 bg-neutral-100 rounded"></div>
           </div>
-          <div class="rounded-2xl bg-white border p-4 animate-pulse">
-            <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
-            <div class="h-4 bg-neutral-100 rounded mt-3 w-4/5"></div>
+          <div class="bg-white ring-1 rounded-2xl p-4 animate-pulse">
+            <div class="w-full h-40 bg-neutral-100 rounded-xl"></div>
+            <div class="h-4 bg-neutral-100 rounded mt-3 w-3/4"></div>
             <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
             <div class="mt-3 h-9 bg-neutral-100 rounded"></div>
           </div>
-          <div class="rounded-2xl bg-white border p-4 animate-pulse">
-            <div class="w-full h-36 bg-neutral-100 rounded-xl"></div>
-            <div class="h-4 bg-neutral-100 rounded mt-3 w-4/5"></div>
+          <div class="bg-white ring-1 rounded-2xl p-4 animate-pulse">
+            <div class="w-full h-40 bg-neutral-100 rounded-xl"></div>
+            <div class="h-4 bg-neutral-100 rounded mt-3 w-3/4"></div>
             <div class="h-3 bg-neutral-100 rounded mt-2 w-1/2"></div>
             <div class="mt-3 h-9 bg-neutral-100 rounded"></div>
           </div>
         </div>
 
-        <div id="empty" class="hidden mt-8 text-center text-neutral-500">Không tìm thấy món phù hợp.</div>
-        <div id="error" class="hidden mt-8 text-center text-red-600">Không tải được dữ liệu. Vui lòng thử lại sau.</div>
+        <p id="empty" class="hidden mt-8 text-center text-neutral-500">Không tìm thấy món phù hợp.</p>
+        <p id="error" class="hidden mt-8 text-center text-red-600">Không tải được dữ liệu. Vui lòng thử lại sau.</p>
       </section>
 
-      <!-- RIGHT: cart + checkout -->
-      <aside class="space-y-4">
-        <div class="rounded-2xl bg-white border shadow-soft p-4">
+      <!-- RIGHT (sticky) -->
+      <aside class="space-y-4 sticky-col">
+        <!-- Cart -->
+        <div class="bg-white rounded-2xl ring-1 soft p-4">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold">Giỏ hàng</h2>
             <button id="clearCart" class="text-sm underline">Xóa giỏ</button>
@@ -96,7 +103,8 @@
           </div>
         </div>
 
-        <div class="rounded-2xl bg-white border shadow-soft p-4">
+        <!-- Checkout -->
+        <div class="bg-white rounded-2xl ring-1 soft p-4">
           <h3 class="text-lg font-semibold">Thông tin giao hàng</h3>
           <form id="checkoutForm" class="mt-3 space-y-3">
             <div>
@@ -132,8 +140,9 @@
     </div>
   </main>
 
+  <!-- FOOTER -->
   <footer class="border-t bg-white">
-    <div class="max-w-screen-2xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-neutral-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
       <div>© <span id="year"></span> CAFE — CACAO</div>
       <div class="flex gap-3">
         <a class="underline" href="index.html">Trang chủ</a>
@@ -143,40 +152,37 @@
   </footer>
 
 <script>
-/* ================= CONFIG ================= */
+/* =============== CONFIG (unchanged backend) =============== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ======= i18n (minimal) ======= */
+/* =============== i18n (minimal) =============== */
 let LANG = localStorage.getItem('lang') || 'vi';
 document.getElementById('btnVI').onclick = ()=>{LANG='vi';localStorage.setItem('lang','vi');render();};
 document.getElementById('btnEN').onclick = ()=>{LANG='en';localStorage.setItem('lang','en');render();};
 document.getElementById('year').textContent = new Date().getFullYear();
 
-/* ======= State ======= */
-let PRODUCTS = [];          // full from DB
-let VIEW = {cat:'All', subcat:'All', q:''};  // filters
-let CART = JSON.parse(localStorage.getItem('cart_v1') || '[]'); // [{id, name, price_vnd, qty, image_url}]
+/* =============== State =============== */
+let PRODUCTS = []; // raw normalized list
+let VIEW = {cat:'All', subcat:'All', q:''};
+let CART = JSON.parse(localStorage.getItem('cart_v1') || '[]'); // [{id,name,price_vnd,qty,image_url}]
 
-/* ======= Utils ======= */
-const moneyK = (v)=> {
-  const n = Number(v||0);
-  return n ? (Math.round(n/1000)+'k') : '0';
-};
+/* =============== Utils =============== */
+const moneyK = v => (Math.round((Number(v)||0)/1000)+'k');
 const qs = (s, r=document)=> r.querySelector(s);
 const qsa = (s, r=document)=> [...r.querySelectorAll(s)];
+const pickTitle = p => LANG==='vi' ? (p.name_vi||p.name_en||'') : (p.name_en||p.name_vi||'');
+
 const setCart = (arr)=> { CART = arr; localStorage.setItem('cart_v1', JSON.stringify(CART)); renderCart(); };
 const addToCart = (p)=> {
   const i = CART.findIndex(x=>x.id===p.id);
-  if (i>=0){ CART[i].qty += 1; } else {
-    CART.push({id:p.id, name:pickTitle(p), price_vnd:p.price_vnd, image_url:p.image_url, qty:1});
-  }
+  if (i>=0) CART[i].qty += 1;
+  else CART.push({id:p.id, name:pickTitle(p), price_vnd:p.price_vnd, image_url:p.image_url, qty:1});
   setCart(CART);
 };
-const pickTitle = (row)=> LANG==='vi' ? (row.name_vi || row.name_en || '') : (row.name_en || row.name_vi || '');
 
-/* ======= Fetch products ======= */
+/* =============== Load products (schema tolerant) =============== */
 async function loadProducts(){
   const url = new URL(location.href);
   const urlCat = url.searchParams.get('category');
@@ -184,15 +190,10 @@ async function loadProducts(){
   if (urlCat) VIEW.cat = urlCat;
   if (urlSub) VIEW.subcat = urlSub;
 
-  // Select * so old/new schemas both work
-  let { data, error } = await sb
-    .from('products')
-    .select('*');
+  let { data, error } = await sb.from('products').select('*');
+  if (error){ qs('#error').classList.remove('hidden'); return; }
 
-  if (error){ document.querySelector('#error').classList.remove('hidden'); return; }
-
-  // normalize
-  const norm = (p)=>({
+  const norm = p => ({
     id: p.id,
     slug: p.slug,
     category: p.category || p.section || '',
@@ -200,7 +201,7 @@ async function loadProducts(){
     name_vi: p.name_vi || p.name || '',
     name_en: p.name_en || '',
     description_vi: p.description_vi || p.description || '',
-    price_vnd: (p.price_vnd != null) ? p.price_vnd : (p.price != null ? p.price : 0),
+    price_vnd: (p.price_vnd!=null)?p.price_vnd:(p.price!=null?p.price:0),
     size: p.size || '',
     is_available: ('is_available' in p) ? p.is_available : (('is_active' in p) ? p.is_active : true),
     image_url: p.image_url || '',
@@ -208,8 +209,7 @@ async function loadProducts(){
     sort_order: ('sort_order' in p) ? p.sort_order : 100
   });
 
-  PRODUCTS = (data||[]).map(norm).filter(p => p.is_available);
-  // order for nice UX
+  PRODUCTS = (data||[]).map(norm).filter(p=>p.is_available);
   PRODUCTS.sort((a,b)=>{
     if (a.category!==b.category) return (a.category||'').localeCompare(b.category||'');
     if (a.subcategory!==b.subcategory) return (a.subcategory||'').localeCompare(b.subcategory||'');
@@ -220,82 +220,75 @@ async function loadProducts(){
   render();
 }
 
-/* ======= Build subcategory pills ======= */
+/* =============== Subcategory pills =============== */
 function buildSubcats(){
   const wrap = qs('#subcats'); wrap.innerHTML='';
   const cats = new Set(PRODUCTS.map(p=>p.category));
-  // if URL cat unknown, default to first available
   if (VIEW.cat!=='All' && !cats.has(VIEW.cat)) VIEW.cat='All';
 
   const subSet = new Set(PRODUCTS
-    .filter(p=>VIEW.cat==='All' ? true : p.category===VIEW.cat)
+    .filter(p=> VIEW.cat==='All' ? true : p.category===VIEW.cat)
     .map(p=>p.subcategory)
   );
+
   const subcats = ['All', ...[...subSet].filter(Boolean)];
   subcats.forEach(sc=>{
     const b = document.createElement('button');
     b.textContent = sc==='All' ? (LANG==='vi'?'Tất cả':'All') : sc;
-    b.className = 'pill px-3 py-1.5 rounded-lg border bg-white text-sm';
+    b.className = 'pill px-3 py-1.5 rounded-lg bg-white ring-1 text-sm';
     b.dataset.subcat = sc;
-    if (VIEW.subcat===sc) b.classList.add('bg-black','text-white','border-black');
-    b.onclick = ()=>{VIEW.subcat=sc; render();};
+    if (VIEW.subcat===sc) b.classList.add('bg-black','text-white');
+    b.onclick = ()=>{ VIEW.subcat=sc; render(); };
     wrap.appendChild(b);
   });
 
-  // mark main cat buttons
+  // category toggles
   qsa('.cat').forEach(btn=>{
-    btn.classList.remove('bg-black','text-white','border-black','font-medium');
-    if (btn.dataset.cat===VIEW.cat) btn.classList.add('bg-black','text-white','border-black','font-medium');
-    btn.onclick = ()=>{VIEW.cat = btn.dataset.cat; VIEW.subcat='All'; buildSubcats(); render(); };
+    btn.classList.remove('bg-black','text-white');
+    if (btn.dataset.cat===VIEW.cat) btn.classList.add('bg-black','text-white');
+    btn.onclick = ()=>{ VIEW.cat = btn.dataset.cat; VIEW.subcat='All'; buildSubcats(); render(); };
   });
 }
 
-/* ======= Render grid (filters + search) ======= */
+/* =============== Render grid =============== */
 function render(){
   const grid = qs('#grid'); grid.innerHTML='';
   qs('#empty').classList.add('hidden'); qs('#error').classList.add('hidden');
-
   const query = VIEW.q.trim().toLowerCase();
+
   const filtered = PRODUCTS.filter(p=>{
     if (VIEW.cat!=='All' && p.category!==VIEW.cat) return false;
     if (VIEW.subcat!=='All' && p.subcategory!==VIEW.subcat) return false;
     if (!query) return true;
-    const hay = [
-      p.name_vi||'', p.name_en||'', p.category||'', p.subcategory||'',
-      p.tags||'', p.description_vi||''
-    ].join(' ').toLowerCase();
+    const hay = [p.name_vi,p.name_en,p.category,p.subcategory,p.tags,p.description_vi].join(' ').toLowerCase();
     return hay.includes(query);
   });
 
   if (!filtered.length){ qs('#empty').classList.remove('hidden'); return; }
 
   filtered.forEach(p=>{
-    const card = document.createElement('div');
-    card.className = 'card rounded-2xl bg-white border shadow-soft overflow-hidden';
-    card.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
-                    : `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
+    const el = document.createElement('div');
+    el.className = 'card bg-white ring-1 rounded-2xl overflow-hidden fade';
+    el.innerHTML = `
+      ${p.image_url
+        ? `<img src="${p.image_url}" class="w-full h-40 object-cover" alt="">`
+        : `<div class="w-full h-40 bg-neutral-100 grid place-items-center text-neutral-400">${(p.category||'').slice(0,2)}</div>`}
       <div class="p-4">
         <div class="font-semibold line-clamp-2">${pickTitle(p)}</div>
         <div class="text-xs text-neutral-500 mt-0.5">${p.category||''}${p.subcategory?(' • '+p.subcategory):''}${p.size?(' • '+p.size):''}</div>
         <div class="mt-2 font-semibold">${moneyK(p.price_vnd)}</div>
         <div class="mt-3 flex items-center gap-2">
           <button class="add bg-black text-white px-3 py-2 rounded-lg" data-id="${p.id}">Thêm</button>
-          <button class="bg-white border px-3 py-2 rounded-lg" data-jump="${p.category}" data-jump-sub="${p.subcategory||''}">Tương tự</button>
+          <button class="bg-white ring-1 px-3 py-2 rounded-lg" data-jump="${p.category}" data-jump-sub="${p.subcategory||''}">Tương tự</button>
         </div>
       </div>`;
-    grid.appendChild(card);
+    grid.appendChild(el);
   });
 
-  // wire add buttons
+  // actions
   qsa('button.add', grid).forEach(btn=>{
-    btn.onclick = ()=>{
-      const p = PRODUCTS.find(x=>x.id===btn.dataset.id);
-      if (p) addToCart(p);
-    };
+    btn.onclick = ()=>{ const p = PRODUCTS.find(x=>x.id===btn.dataset.id); if (p) addToCart(p); };
   });
-
-  // quick nav “similar”
   qsa('button[data-jump]', grid).forEach(btn=>{
     btn.onclick = ()=>{
       VIEW.cat = btn.dataset.jump || 'All';
@@ -305,47 +298,46 @@ function render(){
   });
 }
 
-/* ======= Search ======= */
+/* =============== Search =============== */
 qs('#search').addEventListener('input', e=>{ VIEW.q = e.target.value; render(); });
 
-/* ======= Cart render ======= */
+/* =============== Cart =============== */
 function renderCart(){
   const list = qs('#cartList'); list.innerHTML='';
   if (!CART.length){ list.innerHTML = `<div class="text-sm text-neutral-500">Chưa có món nào.</div>`; }
   let total = 0;
+
   CART.forEach((it, idx)=>{
-    const lineTotal = (it.price_vnd||0) * (it.qty||0);
-    total += lineTotal;
+    const line = (it.price_vnd||0) * (it.qty||0); total += line;
     const row = document.createElement('div');
     row.className = 'py-2 flex items-center gap-3';
     row.innerHTML = `
       <div class="w-12 h-12 rounded-lg bg-neutral-100 overflow-hidden flex-shrink-0">
-        ${it.image_url? `<img class="w-full h-full object-cover" src="${it.image_url}">` : ''}
+        ${it.image_url? `<img class="w-full h-full object-cover" src="${it.image_url}" alt="">` : ''}
       </div>
       <div class="flex-1">
         <div class="text-sm font-medium">${it.name}</div>
         <div class="text-xs text-neutral-500">${moneyK(it.price_vnd)} × ${it.qty}</div>
       </div>
-      <div class="text-sm font-semibold">${moneyK(lineTotal)}</div>
+      <div class="text-sm font-semibold">${moneyK(line)}</div>
       <div class="flex items-center gap-1 ml-2">
-        <button class="dec border rounded px-2" data-idx="${idx}">-</button>
-        <button class="inc border rounded px-2" data-idx="${idx}">+</button>
-        <button class="del text-red-600 text-xs underline ml-1" data-idx="${idx}">x</button>
-      </div>
-    `;
+        <button class="dec ring-1 rounded px-2" data-idx="${idx}" aria-label="Giảm">-</button>
+        <button class="inc ring-1 rounded px-2" data-idx="${idx}" aria-label="Tăng">+</button>
+        <button class="del text-red-600 text-xs underline ml-1" data-idx="${idx}" aria-label="Xoá">x</button>
+      </div>`;
     list.appendChild(row);
   });
+
   qs('#cartTotal').textContent = (total||0).toLocaleString('vi-VN') + ' đ';
 
-  // qty controls
   qsa('.dec', list).forEach(b=>{ b.onclick=()=>{ const i=+b.dataset.idx; CART[i].qty=Math.max(0,CART[i].qty-1); if(CART[i].qty===0) CART.splice(i,1); setCart(CART);} });
   qsa('.inc', list).forEach(b=>{ b.onclick=()=>{ const i=+b.dataset.idx; CART[i].qty++; setCart(CART);} });
   qsa('.del', list).forEach(b=>{ b.onclick=()=>{ const i=+b.dataset.idx; CART.splice(i,1); setCart(CART);} });
 }
 qs('#clearCart').onclick = ()=> setCart([]);
 
-/* ======= Checkout ======= */
-/** Expected tables (create once in SQL):
+/* =============== Checkout =============== */
+/** Tables (reference only, not executed here)
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   code text unique not null,
@@ -356,7 +348,7 @@ create table if not exists public.orders (
   payment_method text default 'COD',
   status text default 'pending',
   total_vnd integer not null,
-  created_at timestamp with time zone default now()
+  created_at timestamptz default now()
 );
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
@@ -379,8 +371,8 @@ function randCode(){
 
 qs('#checkoutForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const msg = qs('#orderMsg'); msg.textContent = ''; msg.className='text-sm mt-2';
-  if (!CART.length){ msg.textContent = 'Giỏ hàng trống.'; msg.classList.add('text-red-600'); return; }
+  const msg = qs('#orderMsg'); msg.textContent=''; msg.className='text-sm mt-2';
+  if (!CART.length){ msg.textContent='Giỏ hàng trống.'; msg.classList.add('text-red-600'); return; }
 
   const fd = new FormData(e.target);
   const order = {
@@ -388,55 +380,44 @@ qs('#checkoutForm').addEventListener('submit', async (e)=>{
     customer_name: fd.get('name')?.trim(),
     phone: fd.get('phone')?.trim(),
     address: fd.get('address')?.trim(),
-    notes: fd.get('notes')?.trim() || null,
+    notes: (fd.get('notes')?.trim() || null),
     payment_method: fd.get('pay') || 'COD',
     total_vnd: CART.reduce((s,it)=> s + (it.price_vnd*it.qty), 0),
     status: 'pending'
   };
-
-  // Basic guard
   if (!order.customer_name || !order.phone || !order.address){
-    msg.textContent = 'Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.'; msg.classList.add('text-red-600'); return;
+    msg.textContent='Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.'; msg.classList.add('text-red-600'); return;
   }
 
-  qs('#placeOrder').disabled = true; qs('#placeOrder').textContent = 'Đang tạo đơn…';
+  const btn = qs('#placeOrder'); btn.disabled=true; btn.textContent='Đang tạo đơn…';
 
-  // 1) Insert order
+  // 1) insert order
   const { data:ordRes, error:ordErr } = await sb.from('orders').insert(order).select('id, code').single();
-  if (ordErr){ 
-    msg.textContent = 'Không tạo được đơn hàng. Vui lòng thử lại.'; msg.classList.add('text-red-600');
-    qs('#placeOrder').disabled = false; qs('#placeOrder').textContent = 'Đặt hàng';
-    return;
-  }
+  if (ordErr){ msg.textContent='Không tạo được đơn hàng. Vui lòng thử lại.'; msg.classList.add('text-red-600'); btn.disabled=false; btn.textContent='Đặt hàng'; return; }
 
-  // 2) Insert order items (snapshot names/prices)
+  // 2) insert items
   const items = CART.map(it=>({
     order_id: ordRes.id,
     product_id: it.id,
     name_snapshot: it.name,
     price_vnd: it.price_vnd,
     qty: it.qty,
-    line_total_vnd: it.price_vnd * it.qty
+    line_total_vnd: it.price_vnd*it.qty
   }));
   const { error:itemErr } = await sb.from('order_items').insert(items);
-  if (itemErr){
-    msg.textContent = 'Đơn đã tạo nhưng thêm món thất bại. Liên hệ cửa hàng.'; msg.classList.add('text-red-600');
-    qs('#placeOrder').disabled = false; qs('#placeOrder').textContent = 'Đặt hàng';
-    return;
-  }
+  if (itemErr){ msg.textContent='Đơn đã tạo nhưng thêm món thất bại. Liên hệ cửa hàng.'; msg.classList.add('text-red-600'); btn.disabled=false; btn.textContent='Đặt hàng'; return; }
 
-  // Success
+  // success
   msg.innerHTML = `🎉 Đặt hàng thành công! Mã đơn: <b>${ordRes.code}</b>`;
   msg.classList.remove('text-red-600'); msg.classList.add('text-green-700');
-  setCart([]); e.target.reset();
-  qs('#placeOrder').disabled = false; qs('#placeOrder').textContent = 'Đặt hàng';
+  setCart([]); e.target.reset(); btn.disabled=false; btn.textContent='Đặt hàng';
 });
 
-/* ======= Boot ======= */
+/* =============== Boot =============== */
 loadProducts();
 renderCart();
 
-// handle prefilled filters via URL
+// URL prefilled filters (after boot for safety)
 const url = new URL(location.href);
 const urlCat = url.searchParams.get('category');
 const urlSub = url.searchParams.get('subcategory');
