@@ -106,10 +106,7 @@ const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' đ';
 let statusFilter = 'all';
 
 // Accept both our UI values and common DB variants
-const STATUS_FALLBACK = {
-  delivered: 'completed',
-  cancelled: 'canceled'
-};
+const STATUS_FALLBACK = { delivered: 'completed', cancelled: 'canceled' };
 const STATUS_CLASSES = s => {
   const k = (s||'pending').toLowerCase();
   return k==='paid' ? 'st-paid'
@@ -120,7 +117,9 @@ const STATUS_CLASSES = s => {
 
 const getAddr = (o) => o.address ?? o.address_snapshot ?? '';
 
-const ADMIN_EMAILS = ['shivammishra.id@gmail.com']; 
+/* ========= Auth guard ========= */
+const ADMIN_EMAILS = ['shivammishra.id@gmail.com']; // change/add as needed
+
 function renderLoginUI() {
   document.body.innerHTML = `
   <main class="min-h-screen grid place-items-center p-6 bg-gradient-to-b from-white to-amber-50">
@@ -152,10 +151,6 @@ async function requireAdmin() {
   if (!ok) { document.body.innerHTML = '<main class="p-8">No access.</main>'; throw new Error('not admin'); }
   return user;
 }
-
-// call this before loading data on each admin page:
-await requireAdmin();
-
 
 /* ===== Safe DOM helpers ===== */
 const $ = sel => document.querySelector(sel);
@@ -198,7 +193,6 @@ async function load(){
   if (to)   oQuery = oQuery.lte('created_at', to + ' 23:59:59');
 
   if (statusFilter !== 'all') {
-    // include fallback variant to keep filtering consistent
     const alt = STATUS_FALLBACK[statusFilter];
     oQuery = alt ? oQuery.in('status', [statusFilter, alt]) : oQuery.eq('status', statusFilter);
   }
@@ -219,7 +213,7 @@ async function load(){
   const filtered = q
     ? merged.filter(o=>{
         const hay = [
-          o.customer_name||'', o.phone||'', o.address||'', o.code||'', o.id||''
+          o.customer_name||'', o.phone||'', getAddr(o)||'', o.code||'', o.id||''
         ].join(' ').toLowerCase();
         return hay.includes(q);
       })
@@ -440,8 +434,16 @@ document.querySelectorAll('[data-st]').forEach(b=>{
   };
 });
 
-/* Boot */
-load();
+/* ========= Boot (no top-level await) ========= */
+(async function boot(){
+  try {
+    await requireAdmin(); // gate page
+    await load();         // then fetch data
+  } catch (err) {
+    // If not signed in / not admin, UI already updated by requireAdmin()
+    console.warn(err);
+  }
+})();
 </script>
 </body>
 </html>
