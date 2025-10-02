@@ -120,6 +120,42 @@ const STATUS_CLASSES = s => {
 
 const getAddr = (o) => o.address ?? o.address_snapshot ?? '';
 
+const ADMIN_EMAILS = ['shivammishra.id@gmail.com']; 
+function renderLoginUI() {
+  document.body.innerHTML = `
+  <main class="min-h-screen grid place-items-center p-6 bg-gradient-to-b from-white to-amber-50">
+    <div class="w-full max-w-md bg-white border rounded-2xl p-6 shadow-sm">
+      <h1 class="text-xl font-semibold">Admin Login</h1>
+      <form id="loginForm" class="mt-4 space-y-3">
+        <input type="email" name="email" required placeholder="Email" class="w-full border rounded-xl px-3 py-2">
+        <input type="password" name="password" required placeholder="Password" class="w-full border rounded-xl px-3 py-2">
+        <button class="w-full bg-black text-white rounded-xl py-2">Sign in</button>
+      </form>
+    </div>
+  </main>`;
+  const f = document.getElementById('loginForm');
+  f.onsubmit = async (e)=>{
+    e.preventDefault();
+    const { error } = await sb.auth.signInWithPassword({
+      email: f.email.value.trim(),
+      password: f.password.value
+    });
+    if (error) { alert('Đăng nhập thất bại'); console.error(error); return; }
+    location.reload();
+  };
+}
+
+async function requireAdmin() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { renderLoginUI(); throw new Error('not signed in'); }
+  const ok = ADMIN_EMAILS.includes((user.email||'').toLowerCase());
+  if (!ok) { document.body.innerHTML = '<main class="p-8">No access.</main>'; throw new Error('not admin'); }
+  return user;
+}
+
+// call this before loading data on each admin page:
+await requireAdmin();
+
 
 /* ===== Safe DOM helpers ===== */
 const $ = sel => document.querySelector(sel);
