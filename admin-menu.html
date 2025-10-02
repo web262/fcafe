@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Menu Manager | CAFE — CACAO</title>
 
-  <!-- Inline favicon to avoid net::ERR_NAME_NOT_RESOLVED -->
-  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="%23000"/><text x="50" y="62" font-size="60" text-anchor="middle" fill="%23fff" font-family="Inter,Arial">C</text></svg>'>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -24,7 +21,7 @@
     .card:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.08)}
     .btn{padding:.5rem .75rem;border:1px solid rgba(15,23,42,.12);border-radius:.75rem;background:#fff}
     .btn-black{background:#000;color:#fff;border-color:#000}
-    .chip{border-radius:.75rem;padding:.35rem .6rem;border:1px solid rgba(15,23,42,.12);}
+    .glass{backdrop-filter:saturate(130%) blur(10px); background:rgba(255,255,255,.6)}
   </style>
 </head>
 <body>
@@ -41,9 +38,9 @@
 
   <main class="max-w-6xl mx-auto px-4 py-5">
     <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-        <input id="q" placeholder="Search name/category/sub…" class="border rounded-xl px-3 py-2 bg-white w-full min-w-[240px]">
-        <button id="btnClear" class="btn hidden">Clear</button>
+      <div class="flex gap-2 items-center w-full sm:w-auto flex-1">
+        <input id="q" placeholder="Search name/category/sub…" class="border rounded-xl px-3 py-2 bg-white flex-1 min-w-[240px]">
+        <button id="btnClear" class="btn">Clear</button>
       </div>
       <button id="btnAdd" class="btn btn-black">+ Add item</button>
     </div>
@@ -166,26 +163,13 @@ async function requireAdmin(){
 const $  = s => document.querySelector(s);
 const grid = $('#grid'), empty = $('#empty'), sk = $('#sk');
 const dlg = $('#editDlg'), form = $('#productForm');
-const qInput = $('#q'), btnClear = $('#btnClear');
 let PRODUCTS = [];
 let FILTER = '';
 
 const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' VND';
+const pickName = p => p.name_vi || p.name || p.name_en || '(no name)';
 
-/* Reset stale search and wire search box */
-qInput.value = '';
-btnClear.classList.add('hidden');
-qInput.addEventListener('input', () => {
-  FILTER = (qInput.value || '').trim().toLowerCase();
-  btnClear.classList.toggle('hidden', FILTER === '');
-  render();
-});
-btnClear.addEventListener('click', () => {
-  qInput.value = '';
-  FILTER = '';
-  btnClear.classList.add('hidden');
-  render();
-});
+/* ========= CRUD helpers ========= */
 
 function buildBasePayload() {
   return {
@@ -201,85 +185,74 @@ function buildBasePayload() {
   };
 }
 
-function toLegacyPayload(p){
+// Legacy column mapping (for older rows)
+const toLegacyPayload = (p) => {
   const q = { ...p };
   if ('name_vi' in q){ q.name = q.name_vi; delete q.name_vi; }
   if ('description_vi' in q){ q.description = q.description_vi; delete q.description_vi; }
   if ('price_vnd' in q){ q.price = q.price_vnd; delete q.price_vnd; }
   if ('is_available' in q){ q.is_active = q.is_available; delete q.is_available; }
   return q;
-}
+};
 
-function isColumnMissing(err){
-  return err && (
-    err.code === '42703' ||
-    err.code === 'PGRST204' ||
-    /column .* does not exist/i.test(err.message||'') ||
-    /could not find the .* column/i.test(err.message||'')
-  );
-}
+const isMissingColumn = err =>
+  err && (err.code === '42703' || err.code === 'PGRST204' ||
+         /column .* does not exist/i.test(err.message||'') ||
+         /could not find the .* column/i.test(err.message||''));
 
-function extractMissingColumn(err){
+const extractMissingCol = err => {
   const m1 = (err.message||'').match(/'([^']+)'\s+column/i);
   if (m1 && m1[1]) return m1[1];
   const m2 = (err.message||'').match(/column\s+"?([a-zA-Z0-9_]+)"?\s+does not exist/i);
-  if (m2 && m2[1]) return m2[1];
-  return null;
-}
+  return (m2 && m2[1]) || null;
+};
 
-/* Save with schema fallback + pruning */
-async function saveProduct({ id, base }) {
-  let payload = { ...base };
+// Insert/update that survives old schemas by pruning unknown cols
+async function saveProduct({ id, payload }) {
+  let body = { ...payload };
   let triedLegacy = false;
+  for (let i=0;i<8;i++){
+    let res = id
+      ? await sb.from('products').update(body).eq('id', id)
+      : await sb.from('products').insert(body);
 
-  for (let attempt = 0; attempt < 8; attempt++) {
-    let res;
-    if (id) res = await sb.from('products').update(payload).eq('id', id);
-    else    res = await sb.from('products').insert(payload);
+    if (!res.error) return { ok:true };
 
-    if (!res.error) return { ok: true };
-
-    const err = res.error;
-
-    if (!triedLegacy && isColumnMissing(err)) {
-      payload = toLegacyPayload(payload);
+    // map to legacy just once
+    if (!triedLegacy && isMissingColumn(res.error)){
+      body = toLegacyPayload(body);
       triedLegacy = true;
       continue;
     }
-    if (isColumnMissing(err)) {
-      const col = extractMissingColumn(err);
-      if (col && (col in payload)) {
-        delete payload[col];
-        continue;
-      }
+    // prune the exact missing column if any
+    if (isMissingColumn(res.error)){
+      const col = extractMissingCol(res.error);
+      if (col && col in body){ delete body[col]; continue; }
     }
-    return { ok:false, error: err };
+    return { ok:false, error:res.error };
   }
-  return { ok:false, error: { message:'Too many retries' } };
+  return { ok:false, error:{message:'Too many retries'} };
 }
 
-/* ====== Load & Render ====== */
+/* ========= Load / Render ========= */
+
 async function load(){
   sk.classList.remove('hidden');
   const { data, error } = await sb.from('products')
     .select('*')
     .order('sort_order', { ascending:true })
-    .order('name_vi', { ascending:true })
-    .order('created_at', { ascending:false });
+    .order('name_vi', { ascending:true });
   if (error){ console.error(error); alert('Load products failed'); sk.classList.add('hidden'); return; }
   PRODUCTS = data || [];
   render();
 }
 
-function pickName(p){ return p.name_vi || p.name || p.name_en || '(no name)'; }
-
 function render(){
-  const list = FILTER
-    ? PRODUCTS.filter(p=>{
-        const hay = [p.name_vi,p.name,p.name_en,p.category,p.subcategory].join(' ').toLowerCase();
-        return hay.includes(FILTER);
-      })
-    : PRODUCTS;
+  const q = FILTER.trim().toLowerCase();
+  const list = !q ? PRODUCTS : PRODUCTS.filter(p=>{
+    const hay = [p.name_vi,p.name,p.name_en,p.category,p.subcategory].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
 
   grid.innerHTML = '';
   empty.classList.toggle('hidden', list.length>0);
@@ -289,14 +262,13 @@ function render(){
     const price = (p.price_vnd!=null) ? p.price_vnd : (p.price||0);
     const card = document.createElement('div');
     card.className = 'card bg-white border rounded-2xl p-3';
+    const badge = ('is_available' in p ? !p.is_available : ('is_active' in p ? !p.is_active : false))
+      ? '<span class="ml-2 text-xs px-2 py-0.5 rounded bg-yellow-100 border border-yellow-300">archived</span>' : '';
     card.innerHTML = `
       <div class="rounded-xl overflow-hidden h-36 bg-neutral-100">
-        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover" alt="">` : ''}
+        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover" loading="lazy">` : ''}
       </div>
-      <div class="mt-2 font-semibold flex items-center gap-2">
-        ${(!p.is_available && p.is_available !== undefined) ? `<span class="chip text-xs">hidden</span>` : ''}
-        <span>${pickName(p)}</span>
-      </div>
+      <div class="mt-2 font-semibold">${pickName(p)} ${badge}</div>
       <div class="text-sm text-neutral-600">${p.category||''} ${p.subcategory?('• '+p.subcategory):''}</div>
       <div class="mt-1 font-medium">${money(price)}</div>
       <div class="mt-2 flex gap-2">
@@ -307,29 +279,16 @@ function render(){
     grid.appendChild(card);
   });
 
-  // EDIT
-  grid.querySelectorAll('[data-edit]').forEach(b=>{
-    b.onclick = ()=> openEditor(b.dataset.edit);
-  });
-
-  // DELETE (inlined logic to avoid any scope issues)
-  grid.querySelectorAll('[data-del]').forEach(b=>{
-    b.onclick = async ()=>{
-      const id = b.dataset.del;
-      if (!id) return;
-      if (!confirm('Delete this item?')) return;
-      const { error } = await sb.from('products').delete().eq('id', id);
-      if (error){ alert('Delete failed: ' + error.message); console.error(error); return; }
-      await load();
-    };
-  });
+  grid.querySelectorAll('[data-edit]').forEach(b=> b.onclick = ()=> openEditor(b.dataset.edit));
+  grid.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=> delItem(b.dataset.del));
 }
 
-/* ====== Editor ====== */
+/* ========= Editor ========= */
+
 function openEditor(id){
   form.reset();
-  document.getElementById('dlgTitle').textContent = id ? 'Edit product' : 'Add product';
-  document.getElementById('btnDelete').style.display = id ? 'inline-flex' : 'none';
+  $('#dlgTitle').textContent = id ? 'Edit product' : 'Add product';
+  $('#btnDelete').style.display = id ? 'inline-flex' : 'none';
 
   if (id){
     const p = PRODUCTS.find(x => String(x.id) === String(id));
@@ -343,19 +302,20 @@ function openEditor(id){
       form.size.value = p.size || '';
       form.description_vi.value = p.description_vi || p.description || '';
       form.image_url.value = p.image_url || '';
-      document.getElementById('is_available').checked =
-        ('is_available' in p) ? !!p.is_available : (('is_active' in p) ? !!p.is_active : true);
+      $('#is_available').checked = ('is_available' in p) ? !!p.is_available :
+                                   (('is_active' in p) ? !!p.is_active : true);
     }
   }
   dlg.showModal();
 }
 
-/* ====== Save (insert/update) ====== */
+/* ========= Save ========= */
+
 form.onsubmit = async (e)=>{
   e.preventDefault();
 
-  // upload first if a file chosen (bucket must exist and be public)
-  const file = document.getElementById('fileInput').files[0];
+  // optional image upload
+  const file = $('#fileInput').files[0];
   if (file){
     const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
     const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
@@ -364,10 +324,10 @@ form.onsubmit = async (e)=>{
     form.image_url.value = pub.publicUrl;
   }
 
-  const base = buildBasePayload();
+  const payload = buildBasePayload();
   const id = form.id.value || null;
 
-  const result = await saveProduct({ id, base });
+  const result = await saveProduct({ id, payload });
 
   if (!result.ok){
     alert('Update failed: ' + (result.error?.message || 'unknown'));
@@ -375,45 +335,62 @@ form.onsubmit = async (e)=>{
     return;
   }
 
-  // Clear the filter so a just-created/renamed item isn't hidden
-  qInput.value = ''; FILTER = ''; btnClear.classList.add('hidden');
-
   dlg.close();
+  // optimistic: let realtime update, but also refresh in case RLS hides mutations
   await load();
 };
 
-// Footer delete in dialog
 document.getElementById('btnDelete').onclick = async (e)=>{
   e.preventDefault();
   if (!form.id.value) return;
-  if (!confirm('Delete this item?')) return;
-  const { error } = await sb.from('products').delete().eq('id', form.id.value);
-  if (error){ alert('Delete failed: ' + error.message); console.error(error); return; }
-  dlg.close();
-  await load();
+  delItem(form.id.value);
 };
 
-/* ====== Misc events ====== */
+/* ========= Delete (safe) ========= */
+
+async function delItem(id){
+  if (!confirm('Delete this item?')) return;
+
+  // First try hard delete.
+  let res = await sb.from('products').delete().eq('id', id);
+
+  // If FK blocks deletion, archive instead (soft delete).
+  if (res.error){
+    const msg = (res.error.message||'').toLowerCase();
+    const blocked = res.status === 409 || res.error.code === '23503' || msg.includes('foreign key');
+    if (blocked){
+      if (!confirm('This item is used by existing orders.\nArchive it instead (hide from menu)?')) return;
+      const { error:upErr } = await sb.from('products').update({ is_available:false, is_active:false }).eq('id', id);
+      if (upErr){ alert('Archive failed: ' + upErr.message); console.error(upErr); return; }
+    } else {
+      alert('Delete failed: ' + res.error.message);
+      console.error(res.error);
+      return;
+    }
+  }
+
+  await load();
+}
+
+/* ========= Events ========= */
 document.getElementById('btnAdd').onclick = ()=> openEditor();
 document.getElementById('btnSignOut').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+document.getElementById('btnClear').onclick = ()=>{ $('#q').value=''; FILTER=''; render(); };
+document.getElementById('q').addEventListener('input', e=>{ FILTER = e.target.value; render(); });
 
-/* ====== Realtime auto-refresh ====== */
-let channel;
-function subscribeRealtime(){
-  // Listen to inserts/updates/deletes on products and refresh the grid
-  channel = sb.channel('realtime-products')
-    .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        async () => { await load(); })
-    .subscribe();
-}
-window.addEventListener('beforeunload', ()=>{ if (channel) sb.removeChannel(channel); });
+/* ========= Realtime sync ========= */
+// Any insert/update/delete to products will refresh the list.
+// (Make sure Database → Replication → Realtime is enabled for the `public` schema in Supabase)
+const channel = sb.channel('products-live')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+    await load();
+  })
+  .subscribe();
 
-/* ====== Boot ====== */
+/* ========= Boot ========= */
 (async function boot(){
   try {
     await requireAdmin();
-    subscribeRealtime();
     await load();
   } catch(err){
     console.warn(err);
@@ -422,3 +399,4 @@ window.addEventListener('beforeunload', ()=>{ if (channel) sb.removeChannel(chan
 </script>
 </body>
 </html>
+
