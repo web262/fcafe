@@ -3,29 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Menu | CAFE — CACAO</title>
+  <title>Admin — Menu Manager | CAFE — CACAO</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root{ --muted:#64748b; }
+    body{
+      color:#111827;
+      background:
+        radial-gradient(1200px 500px at -10% -20%, #FFE8A3 0, #FFE8A3 25%, transparent 60%),
+        radial-gradient(900px 450px at 110% 0%, #FF8FAB40 0, transparent 60%),
+        linear-gradient(180deg, #FFF 0, #FFF9F0 100%);
+    }
+    .card{transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.08)}
+    .btn{padding:.5rem .75rem;border:1px solid rgba(15,23,42,.12);border-radius:.75rem;background:#fff}
+    .btn-black{background:#000;color:#fff;border-color:#000}
+    .chip{border-radius:9999px;padding:.5rem .9rem;border:1px solid rgba(15,23,42,.12);background:#fff}
+    .glass{backdrop-filter:saturate(130%) blur(10px); background:rgba(255,255,255,.6)}
+  </style>
 </head>
-<body class="bg-amber-50/40">
+<body>
+
   <header class="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
     <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="font-semibold">CAFE — CACAO • Menu Manager</div>
       <div class="flex gap-2">
-        <a href="./admin.html" class="px-3 py-2 rounded-lg border bg-white">Orders</a>
-        <button id="btnSignOut" class="px-3 py-2 rounded-lg bg-black text-white">Sign out</button>
+        <a href="./admin.html" class="btn">Orders</a>
+        <button id="btnSignOut" class="btn btn-black">Sign out</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-5">
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-3">
       <input id="q" placeholder="Search name/category/sub…" class="border rounded-xl px-3 py-2 bg-white flex-1 min-w-[280px]">
-      <button id="btnAdd" class="px-3 py-2 rounded-lg bg-black text-white">+ Add item</button>
+      <button id="btnAdd" class="btn btn-black">+ Add item</button>
     </div>
 
     <div id="grid" class="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     <p id="empty" class="hidden text-center text-neutral-500 mt-10">No items.</p>
+
+    <!-- skeleton -->
+    <div id="sk" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="rounded-2xl border p-3 bg-white animate-pulse h-56"></div>
+      <div class="rounded-2xl border p-3 bg-white animate-pulse h-56"></div>
+      <div class="rounded-2xl border p-3 bg-white animate-pulse h-56"></div>
+    </div>
   </main>
 
   <!-- Modal -->
@@ -83,52 +109,71 @@
           <label for="is_available">Available</label>
         </div>
         <div class="flex gap-2">
-          <button id="btnDelete" class="px-3 py-2 rounded-lg border">Delete</button>
-          <button class="px-3 py-2 rounded-lg bg-black text-white">Save</button>
+          <button id="btnDelete" class="btn">Delete</button>
+          <button class="btn btn-black">Save</button>
         </div>
       </div>
     </form>
   </dialog>
 
 <script>
-/* === setup === */
+/* ====== Supabase ====== */
 const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// auth guard (from step 5)
+/* ====== Auth guard (same allow-list as admin.html) ====== */
 const ADMIN_EMAILS = ['shivammishra.id@gmail.com'];
+
+function renderLoginUI(){
+  document.body.innerHTML = `
+  <main class="min-h-screen grid place-items-center p-6 bg-gradient-to-b from-white to-amber-50">
+    <div class="w-full max-w-md bg-white border rounded-2xl p-6 shadow-sm">
+      <h1 class="text-xl font-semibold">Admin Login</h1>
+      <form id="loginForm" class="mt-4 space-y-3">
+        <input type="email" name="email" required placeholder="Email" class="w-full border rounded-xl px-3 py-2">
+        <input type="password" name="password" required placeholder="Password" class="w-full border rounded-xl px-3 py-2">
+        <button class="w-full bg-black text-white rounded-xl py-2">Sign in</button>
+      </form>
+    </div>
+  </main>`;
+  const f = document.getElementById('loginForm');
+  f.onsubmit = async (e)=>{
+    e.preventDefault();
+    const { error } = await sb.auth.signInWithPassword({
+      email: f.email.value.trim(),
+      password: f.password.value
+    });
+    if (error){ alert(`Đăng nhập thất bại: ${error.message}`); return; }
+    location.reload();
+  };
+}
+
 async function requireAdmin(){
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) { return location.href = './admin.html'; } // or render a login form here
-  if (!ADMIN_EMAILS.includes((user.email||'').toLowerCase())) {
-    document.body.innerHTML = '<main class="p-8">No access.</main>'; throw new Error('not admin');
-  }
+  if (!user){ renderLoginUI(); throw new Error('not signed in'); }
+  const ok = ADMIN_EMAILS.includes((user.email||'').toLowerCase());
+  if (!ok){ document.body.innerHTML = '<main class="p-8">No access.</main>'; throw new Error('not admin'); }
+  return user;
 }
-await requireAdmin();
 
-document.getElementById('btnSignOut').onclick = async ()=>{
-  await sb.auth.signOut(); location.reload();
-};
-
-/* === state === */
+/* ====== State / helpers ====== */
+const $  = s => document.querySelector(s);
+const grid = $('#grid'), empty = $('#empty'), sk = $('#sk');
+const dlg = $('#editDlg'), form = $('#productForm');
 let PRODUCTS = [];
 let FILTER = '';
 
-/* === helpers === */
-const $ = s => document.querySelector(s);
-const grid = $('#grid');
-const dlg  = $('#editDlg');
-const form = $('#productForm');
-const empty = $('#empty');
-
 function money(v){ return (Number(v)||0).toLocaleString('vi-VN') + ' VND'; }
 
-/* === load list === */
+/* ====== Load & Render ====== */
 async function load(){
-  let q = sb.from('products').select('*').order('sort_order', {ascending:true}).order('name_vi', {ascending:true});
-  const { data, error } = await q;
-  if (error) { console.error(error); alert('Load products failed'); return; }
+  sk.classList.remove('hidden');
+  const { data, error } = await sb.from('products')
+    .select('*')
+    .order('sort_order', { ascending:true })
+    .order('name_vi', { ascending:true });
+  if (error){ console.error(error); alert('Load products failed'); sk.classList.add('hidden'); return; }
   PRODUCTS = data || [];
   render();
 }
@@ -142,12 +187,13 @@ function render(){
 
   grid.innerHTML = '';
   empty.classList.toggle('hidden', list.length>0);
+  sk.classList.add('hidden');
 
   list.forEach(p=>{
     const card = document.createElement('div');
-    card.className = 'card p-3';
+    card.className = 'card bg-white border rounded-2xl p-3';
     card.innerHTML = `
-      <div class="rounded-lg overflow-hidden h-36 bg-neutral-100">
+      <div class="rounded-xl overflow-hidden h-36 bg-neutral-100">
         ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : ''}
       </div>
       <div class="mt-2 font-semibold">${p.name_vi || p.name_en || '(no name)'}</div>
@@ -165,31 +211,35 @@ function render(){
   grid.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=> delItem(b.dataset.del));
 }
 
-$('#q').addEventListener('input', (e)=>{ FILTER = e.target.value; render(); });
-$('#btnAdd').onclick = ()=> openEditor();
-
-/* === editor === */
-async function openEditor(id){
+/* ====== Editor ====== */
+function openEditor(id){
   form.reset();
   $('#dlgTitle').textContent = id ? 'Edit product' : 'Add product';
   $('#btnDelete').style.display = id ? 'inline-flex' : 'none';
+
   if (id){
-    const p = PRODUCTS.find(x=> String(x.id) === String(id));
-    for (const k of ['id','name_vi','name_en','category','subcategory','price_vnd','size','description_vi','image_url']) {
-      if (form[k] && p[k]!=null) form[k].value = p[k];
+    const p = PRODUCTS.find(x => String(x.id) === String(id));
+    if (p){
+      form.id.value = p.id;
+      form.name_vi.value = p.name_vi || '';
+      form.name_en.value = p.name_en || '';
+      form.category.value = p.category || '';
+      form.subcategory.value = p.subcategory || '';
+      form.price_vnd.value = p.price_vnd || 0;
+      form.size.value = p.size || '';
+      form.description_vi.value = p.description_vi || '';
+      form.image_url.value = p.image_url || '';
+      $('#is_available').checked = ('is_available' in p) ? !!p.is_available : true;
     }
-    $('#is_available').checked = ('is_available' in p) ? !!p.is_available : true;
   }
   dlg.showModal();
 }
 
-form.addEventListener('close', ()=>{}); // noop
-
 form.onsubmit = async (e)=>{
   e.preventDefault();
 
-  // optional: upload selected file first
-  const file = document.getElementById('fileInput').files[0];
+  // upload first if a file chosen
+  const file = $('#fileInput').files[0];
   if (file){
     const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
     const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
@@ -207,13 +257,13 @@ form.onsubmit = async (e)=>{
     size: form.size.value.trim() || null,
     description_vi: form.description_vi.value.trim() || null,
     image_url: form.image_url.value.trim() || null,
-    is_available: form.is_available.checked
+    is_available: $('#is_available').checked
   };
 
-  if (form.id.value){ // update
+  if (form.id.value){
     const { error } = await sb.from('products').update(payload).eq('id', form.id.value);
     if (error){ alert('Update failed'); console.error(error); return; }
-  } else {            // insert
+  } else {
     const { error } = await sb.from('products').insert(payload);
     if (error){ alert('Insert failed'); console.error(error); return; }
   }
@@ -232,8 +282,20 @@ document.getElementById('btnDelete').onclick = async (e)=>{
   await load();
 };
 
-/* === boot === */
-await load();
+/* ====== Events ====== */
+document.getElementById('btnAdd').onclick = ()=> openEditor();
+document.getElementById('btnSignOut').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+document.getElementById('q').addEventListener('input', e=>{ FILTER = e.target.value; render(); });
+
+/* ====== Boot (no top-level await) ====== */
+(async function boot(){
+  try {
+    await requireAdmin();
+    await load();
+  } catch(err){
+    console.warn(err);
+  }
+})();
 </script>
 </body>
 </html>
