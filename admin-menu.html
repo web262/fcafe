@@ -21,7 +21,6 @@
     .card:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.08)}
     .btn{padding:.5rem .75rem;border:1px solid rgba(15,23,42,.12);border-radius:.75rem;background:#fff}
     .btn-black{background:#000;color:#fff;border-color:#000}
-    .chip{border-radius:9999px;padding:.5rem .9rem;border:1px solid rgba(15,23,42,.12);background:#fff}
     .glass{backdrop-filter:saturate(130%) blur(10px); background:rgba(255,255,255,.6)}
   </style>
 </head>
@@ -166,6 +165,41 @@ let FILTER = '';
 
 function money(v){ return (Number(v)||0).toLocaleString('vi-VN') + ' VND'; }
 
+/* Build base payload with “new” column names */
+function buildBasePayload() {
+  return {
+    name_vi: (form.name_vi.value || '').trim(),
+    name_en: (form.name_en.value || '').trim() || null,
+    category: (form.category.value || '').trim() || null,
+    subcategory: (form.subcategory.value || '').trim() || null,
+    price_vnd: Number(form.price_vnd.value) || 0,
+    size: (form.size.value || '').trim() || null,
+    description_vi: (form.description_vi.value || '').trim() || null,
+    image_url: (form.image_url.value || '').trim() || null,
+    is_available: $('#is_available').checked
+  };
+}
+
+/* Convert to “legacy” column names */
+function toLegacyPayload(p){
+  const q = { ...p };
+  q.name        = p.name_vi;        delete q.name_vi;
+  q.description = p.description_vi; delete q.description_vi;
+  q.price       = p.price_vnd;      delete q.price_vnd;
+  q.is_active   = p.is_available;    delete q.is_available;
+  // keep others as-is (category, subcategory, size, image_url, name_en)
+  return q;
+}
+
+/* Retry helper on column-missing errors */
+function isColumnMissing(err){
+  return err &&
+    (err.code === '42703' ||            // Postgres undefined_column
+     err.code === 'PGRST204' ||         // PostgREST column not found
+     /column .* does not exist/i.test(err.message||'') ||
+     /could not find the .* column/i.test(err.message||''));
+}
+
 /* ====== Load & Render ====== */
 async function load(){
   sk.classList.remove('hidden');
@@ -178,10 +212,12 @@ async function load(){
   render();
 }
 
+function pickName(p){ return p.name_vi || p.name || p.name_en || '(no name)'; }
+
 function render(){
   const q = FILTER.trim().toLowerCase();
   const list = !q ? PRODUCTS : PRODUCTS.filter(p=>{
-    const hay = [p.name_vi,p.name_en,p.category,p.subcategory].join(' ').toLowerCase();
+    const hay = [p.name_vi,p.name,p.name_en,p.category,p.subcategory].join(' ').toLowerCase();
     return hay.includes(q);
   });
 
@@ -190,15 +226,16 @@ function render(){
   sk.classList.add('hidden');
 
   list.forEach(p=>{
+    const price = (p.price_vnd!=null) ? p.price_vnd : (p.price||0);
     const card = document.createElement('div');
     card.className = 'card bg-white border rounded-2xl p-3';
     card.innerHTML = `
       <div class="rounded-xl overflow-hidden h-36 bg-neutral-100">
         ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : ''}
       </div>
-      <div class="mt-2 font-semibold">${p.name_vi || p.name_en || '(no name)'}</div>
+      <div class="mt-2 font-semibold">${pickName(p)}</div>
       <div class="text-sm text-neutral-600">${p.category||''} ${p.subcategory?('• '+p.subcategory):''}</div>
-      <div class="mt-1 font-medium">${money(p.price_vnd)}</div>
+      <div class="mt-1 font-medium">${money(price)}</div>
       <div class="mt-2 flex gap-2">
         <button class="btn" data-edit="${p.id}">Edit</button>
         <button class="btn" data-del="${p.id}">Delete</button>
@@ -221,20 +258,22 @@ function openEditor(id){
     const p = PRODUCTS.find(x => String(x.id) === String(id));
     if (p){
       form.id.value = p.id;
-      form.name_vi.value = p.name_vi || '';
+      form.name_vi.value = p.name_vi || p.name || '';
       form.name_en.value = p.name_en || '';
       form.category.value = p.category || '';
       form.subcategory.value = p.subcategory || '';
-      form.price_vnd.value = p.price_vnd || 0;
+      form.price_vnd.value = (p.price_vnd!=null) ? p.price_vnd : (p.price||0);
       form.size.value = p.size || '';
-      form.description_vi.value = p.description_vi || '';
+      form.description_vi.value = p.description_vi || p.description || '';
       form.image_url.value = p.image_url || '';
-      $('#is_available').checked = ('is_available' in p) ? !!p.is_available : true;
+      $('#is_available').checked = ('is_available' in p) ? !!p.is_available :
+                                   (('is_active' in p) ? !!p.is_active : true);
     }
   }
   dlg.showModal();
 }
 
+/* ====== Save (insert/update) with schema fallback ====== */
 form.onsubmit = async (e)=>{
   e.preventDefault();
 
@@ -242,31 +281,33 @@ form.onsubmit = async (e)=>{
   const file = $('#fileInput').files[0];
   if (file){
     const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
+    // Ensure you created a public bucket named "product-images" in Supabase Storage
     const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
-    if (upErr){ alert('Upload failed'); console.error(upErr); return; }
+    if (upErr){ alert('Upload failed: ' + upErr.message); console.error(upErr); return; }
     const { data:pub } = sb.storage.from('product-images').getPublicUrl(filename);
     form.image_url.value = pub.publicUrl;
   }
 
-  const payload = {
-    name_vi: form.name_vi.value.trim(),
-    name_en: form.name_en.value.trim() || null,
-    category: form.category.value.trim() || null,
-    subcategory: form.subcategory.value.trim() || null,
-    price_vnd: Number(form.price_vnd.value) || 0,
-    size: form.size.value.trim() || null,
-    description_vi: form.description_vi.value.trim() || null,
-    image_url: form.image_url.value.trim() || null,
-    is_available: $('#is_available').checked
-  };
+  const base = buildBasePayload();
+  let err;
 
   if (form.id.value){
-    const { error } = await sb.from('products').update(payload).eq('id', form.id.value);
-    if (error){ alert('Update failed'); console.error(error); return; }
+    // try new schema
+    ({ error: err } = await sb.from('products').update(base).eq('id', form.id.value));
+    if (isColumnMissing(err)){
+      // retry legacy
+      const legacy = toLegacyPayload(base);
+      ({ error: err } = await sb.from('products').update(legacy).eq('id', form.id.value));
+    }
   } else {
-    const { error } = await sb.from('products').insert(payload);
-    if (error){ alert('Insert failed'); console.error(error); return; }
+    ({ error: err } = await sb.from('products').insert(base));
+    if (isColumnMissing(err)){
+      const legacy = toLegacyPayload(base);
+      ({ error: err } = await sb.from('products').insert(legacy));
+    }
   }
+
+  if (err){ alert('Update failed: ' + (err.message||'unknown')); console.error(err); return; }
 
   dlg.close();
   await load();
@@ -277,7 +318,7 @@ document.getElementById('btnDelete').onclick = async (e)=>{
   if (!form.id.value) return;
   if (!confirm('Delete this item?')) return;
   const { error } = await sb.from('products').delete().eq('id', form.id.value);
-  if (error){ alert('Delete failed'); console.error(error); return; }
+  if (error){ alert('Delete failed: ' + error.message); console.error(error); return; }
   dlg.close();
   await load();
 };
@@ -286,6 +327,14 @@ document.getElementById('btnDelete').onclick = async (e)=>{
 document.getElementById('btnAdd').onclick = ()=> openEditor();
 document.getElementById('btnSignOut').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
 document.getElementById('q').addEventListener('input', e=>{ FILTER = e.target.value; render(); });
+
+/* ====== Delete item helper ====== */
+async function delItem(id){
+  if (!confirm('Delete this item?')) return;
+  const { error } = await sb.from('products').delete().eq('id', id);
+  if (error){ alert('Delete failed: ' + error.message); console.error(error); return; }
+  await load();
+}
 
 /* ====== Boot (no top-level await) ====== */
 (async function boot(){
