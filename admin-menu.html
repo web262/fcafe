@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Menu | CAFE — CACAO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-amber-50/40">
+  <header class="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="font-semibold">CAFE — CACAO • Menu Manager</div>
+      <div class="flex gap-2">
+        <a href="./admin.html" class="px-3 py-2 rounded-lg border bg-white">Orders</a>
+        <button id="btnSignOut" class="px-3 py-2 rounded-lg bg-black text-white">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-5">
+    <div class="flex flex-wrap items-center gap-2">
+      <input id="q" placeholder="Search name/category/sub…" class="border rounded-xl px-3 py-2 bg-white flex-1 min-w-[280px]">
+      <button id="btnAdd" class="px-3 py-2 rounded-lg bg-black text-white">+ Add item</button>
+    </div>
+
+    <div id="grid" class="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <p id="empty" class="hidden text-center text-neutral-500 mt-10">No items.</p>
+  </main>
+
+  <!-- Modal -->
+  <dialog id="editDlg" class="rounded-2xl p-0 w-[min(560px,95vw)]">
+    <form id="productForm" method="dialog" class="p-4 bg-white space-y-3">
+      <h3 id="dlgTitle" class="text-lg font-semibold">Add product</h3>
+      <input type="hidden" name="id">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm">Name (VI)</label>
+          <input name="name_vi" required class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Name (EN)</label>
+          <input name="name_en" class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Category</label>
+          <input name="category" class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Subcategory</label>
+          <input name="subcategory" class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Price (VND)</label>
+          <input name="price_vnd" type="number" min="0" step="1000" required class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Size (optional)</label>
+          <input name="size" class="w-full border rounded-xl px-3 py-2">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm">Description (VI)</label>
+        <textarea name="description_vi" rows="2" class="w-full border rounded-xl px-3 py-2"></textarea>
+      </div>
+
+      <div class="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <div>
+          <label class="text-sm">Image URL</label>
+          <input name="image_url" class="w-full border rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="text-sm">Upload</label>
+          <input id="fileInput" type="file" accept="image/*" class="block">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <div class="flex items-center gap-2">
+          <input id="is_available" name="is_available" type="checkbox" checked>
+          <label for="is_available">Available</label>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnDelete" class="px-3 py-2 rounded-lg border">Delete</button>
+          <button class="px-3 py-2 rounded-lg bg-black text-white">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+<script>
+/* === setup === */
+const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// auth guard (from step 5)
+const ADMIN_EMAILS = ['shivammishra.id@gmail.com'];
+async function requireAdmin(){
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { return location.href = './admin.html'; } // or render a login form here
+  if (!ADMIN_EMAILS.includes((user.email||'').toLowerCase())) {
+    document.body.innerHTML = '<main class="p-8">No access.</main>'; throw new Error('not admin');
+  }
+}
+await requireAdmin();
+
+document.getElementById('btnSignOut').onclick = async ()=>{
+  await sb.auth.signOut(); location.reload();
+};
+
+/* === state === */
+let PRODUCTS = [];
+let FILTER = '';
+
+/* === helpers === */
+const $ = s => document.querySelector(s);
+const grid = $('#grid');
+const dlg  = $('#editDlg');
+const form = $('#productForm');
+const empty = $('#empty');
+
+function money(v){ return (Number(v)||0).toLocaleString('vi-VN') + ' VND'; }
+
+/* === load list === */
+async function load(){
+  let q = sb.from('products').select('*').order('sort_order', {ascending:true}).order('name_vi', {ascending:true});
+  const { data, error } = await q;
+  if (error) { console.error(error); alert('Load products failed'); return; }
+  PRODUCTS = data || [];
+  render();
+}
+
+function render(){
+  const q = FILTER.trim().toLowerCase();
+  const list = !q ? PRODUCTS : PRODUCTS.filter(p=>{
+    const hay = [p.name_vi,p.name_en,p.category,p.subcategory].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  grid.innerHTML = '';
+  empty.classList.toggle('hidden', list.length>0);
+
+  list.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'card p-3';
+    card.innerHTML = `
+      <div class="rounded-lg overflow-hidden h-36 bg-neutral-100">
+        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : ''}
+      </div>
+      <div class="mt-2 font-semibold">${p.name_vi || p.name_en || '(no name)'}</div>
+      <div class="text-sm text-neutral-600">${p.category||''} ${p.subcategory?('• '+p.subcategory):''}</div>
+      <div class="mt-1 font-medium">${money(p.price_vnd)}</div>
+      <div class="mt-2 flex gap-2">
+        <button class="btn" data-edit="${p.id}">Edit</button>
+        <button class="btn" data-del="${p.id}">Delete</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll('[data-edit]').forEach(b=> b.onclick = ()=> openEditor(b.dataset.edit));
+  grid.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=> delItem(b.dataset.del));
+}
+
+$('#q').addEventListener('input', (e)=>{ FILTER = e.target.value; render(); });
+$('#btnAdd').onclick = ()=> openEditor();
+
+/* === editor === */
+async function openEditor(id){
+  form.reset();
+  $('#dlgTitle').textContent = id ? 'Edit product' : 'Add product';
+  $('#btnDelete').style.display = id ? 'inline-flex' : 'none';
+  if (id){
+    const p = PRODUCTS.find(x=> String(x.id) === String(id));
+    for (const k of ['id','name_vi','name_en','category','subcategory','price_vnd','size','description_vi','image_url']) {
+      if (form[k] && p[k]!=null) form[k].value = p[k];
+    }
+    $('#is_available').checked = ('is_available' in p) ? !!p.is_available : true;
+  }
+  dlg.showModal();
+}
+
+form.addEventListener('close', ()=>{}); // noop
+
+form.onsubmit = async (e)=>{
+  e.preventDefault();
+
+  // optional: upload selected file first
+  const file = document.getElementById('fileInput').files[0];
+  if (file){
+    const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
+    const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
+    if (upErr){ alert('Upload failed'); console.error(upErr); return; }
+    const { data:pub } = sb.storage.from('product-images').getPublicUrl(filename);
+    form.image_url.value = pub.publicUrl;
+  }
+
+  const payload = {
+    name_vi: form.name_vi.value.trim(),
+    name_en: form.name_en.value.trim() || null,
+    category: form.category.value.trim() || null,
+    subcategory: form.subcategory.value.trim() || null,
+    price_vnd: Number(form.price_vnd.value) || 0,
+    size: form.size.value.trim() || null,
+    description_vi: form.description_vi.value.trim() || null,
+    image_url: form.image_url.value.trim() || null,
+    is_available: form.is_available.checked
+  };
+
+  if (form.id.value){ // update
+    const { error } = await sb.from('products').update(payload).eq('id', form.id.value);
+    if (error){ alert('Update failed'); console.error(error); return; }
+  } else {            // insert
+    const { error } = await sb.from('products').insert(payload);
+    if (error){ alert('Insert failed'); console.error(error); return; }
+  }
+
+  dlg.close();
+  await load();
+};
+
+document.getElementById('btnDelete').onclick = async (e)=>{
+  e.preventDefault();
+  if (!form.id.value) return;
+  if (!confirm('Delete this item?')) return;
+  const { error } = await sb.from('products').delete().eq('id', form.id.value);
+  if (error){ alert('Delete failed'); console.error(error); return; }
+  dlg.close();
+  await load();
+};
+
+/* === boot === */
+await load();
+</script>
+</body>
+</html>
