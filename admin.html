@@ -114,11 +114,10 @@ const STATUS_CLASSES = s => {
     : (k==='cancelled'||k==='canceled') ? 'st-cancelled'
     : 'st-pending';
 };
-
 const getAddr = (o) => o.address ?? o.address_snapshot ?? '';
 
 /* ========= Auth guard ========= */
-const ADMIN_EMAILS = ['shivammishra.id@gmail.com']; // change/add as needed
+const ADMIN_EMAILS = ['shivammishra.id@gmail.com']; // adjust list as needed
 
 function renderLoginUI() {
   document.body.innerHTML = `
@@ -222,6 +221,25 @@ async function load(){
   render(filtered);
 }
 
+/* ========= Status setter with fallback ========= */
+function isStatusConstraint(err){
+  return err && (err.code === '23514' || /status_check/i.test(err.message||''));
+}
+async function setOrderStatus(orderId, want){
+  const trySet = (val) => sb.from('orders').update({ status: val }).eq('id', orderId);
+  let { error } = await trySet(want);
+  if (!error) return { ok:true };
+  if (isStatusConstraint(error)) {
+    const alt = STATUS_FALLBACK[want];
+    if (alt) {
+      const retry = await trySet(alt);
+      if (!retry.error) return { ok:true };
+      error = retry.error;
+    }
+  }
+  return { ok:false, error };
+}
+
 /* ========= Render ========= */
 function render(orders){
   const list = $('#list');
@@ -241,7 +259,6 @@ function render(orders){
 
     const subtotalCalc = (o.order_items||[]).reduce((s,it)=> s + (Number(it.line_total_vnd)||0), 0);
     const totalDisplay = (o.total_vnd!=null ? o.total_vnd : subtotalCalc);
-
     const st = (o.status||'pending').toLowerCase();
 
     const card = document.createElement('div');
@@ -290,27 +307,11 @@ function render(orders){
         if (act === 'print'){ printReceipt(o); return; }
 
         if (act.startsWith('set:')){
-          const want = act.split(':')[1];              // paid/delivered/cancelled
-          const tryStatus = async (value) =>
-            await sb.from('orders').update({ status:value }).eq('id', o.id);
-
+          const want = act.split(':')[1]; // paid / delivered / cancelled
           btn.disabled = true;
-
-          // 1st attempt: as requested
-          let { error } = await tryStatus(want);
-
-          // If the DB has a different spelling/value, retry once with a fallback
-          if (error && (error.code === '23514' || (error.message||'').includes('orders_status_check'))) {
-            const alt = STATUS_FALLBACK[want];
-            if (alt) {
-              const retry = await tryStatus(alt);
-              error = retry.error; // overwrite
-            }
-          }
-
+          const res = await setOrderStatus(o.id, want);
           btn.disabled = false;
-
-          if (error){ alert('Cập nhật trạng thái thất bại'); console.error(error); }
+          if (!res.ok){ alert('Cập nhật trạng thái thất bại'); console.error(res.error); }
           else load();
         }
       };
@@ -434,13 +435,12 @@ document.querySelectorAll('[data-st]').forEach(b=>{
   };
 });
 
-/* ========= Boot (no top-level await) ========= */
+/* ========= Boot ========= */
 (async function boot(){
   try {
-    await requireAdmin(); // gate page
-    await load();         // then fetch data
+    await requireAdmin();
+    await load();
   } catch (err) {
-    // If not signed in / not admin, UI already updated by requireAdmin()
     console.warn(err);
   }
 })();
