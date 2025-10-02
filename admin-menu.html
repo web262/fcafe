@@ -121,7 +121,7 @@ const SUPABASE_URL  = 'https://peenohpyubshzxgzzkhx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZW5vaHB5dWJzaHp4Z3p6a2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTczOTYsImV4cCI6MjA3NDU3MzM5Nn0.5PJYRCGyhM-E16yJrU5W_kBeDQgaJiine4j_cS9gKoU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ====== Auth guard (same allow-list as admin.html) ====== */
+/* ====== Auth guard ====== */
 const ADMIN_EMAILS = ['shivammishra.id@gmail.com'];
 
 function renderLoginUI(){
@@ -163,9 +163,8 @@ const dlg = $('#editDlg'), form = $('#productForm');
 let PRODUCTS = [];
 let FILTER = '';
 
-function money(v){ return (Number(v)||0).toLocaleString('vi-VN') + ' VND'; }
+const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' VND';
 
-/* Build base payload with “new” column names */
 function buildBasePayload() {
   return {
     name_vi: (form.name_vi.value || '').trim(),
@@ -180,24 +179,67 @@ function buildBasePayload() {
   };
 }
 
-/* Convert to “legacy” column names */
 function toLegacyPayload(p){
   const q = { ...p };
-  q.name        = p.name_vi;        delete q.name_vi;
-  q.description = p.description_vi; delete q.description_vi;
-  q.price       = p.price_vnd;      delete q.price_vnd;
-  q.is_active   = p.is_available;    delete q.is_available;
-  // keep others as-is (category, subcategory, size, image_url, name_en)
+  if ('name_vi' in q){ q.name = q.name_vi; delete q.name_vi; }
+  if ('description_vi' in q){ q.description = q.description_vi; delete q.description_vi; }
+  if ('price_vnd' in q){ q.price = q.price_vnd; delete q.price_vnd; }
+  if ('is_available' in q){ q.is_active = q.is_available; delete q.is_available; }
   return q;
 }
 
-/* Retry helper on column-missing errors */
 function isColumnMissing(err){
-  return err &&
-    (err.code === '42703' ||            // Postgres undefined_column
-     err.code === 'PGRST204' ||         // PostgREST column not found
-     /column .* does not exist/i.test(err.message||'') ||
-     /could not find the .* column/i.test(err.message||''));
+  return err && (
+    err.code === '42703' ||
+    err.code === 'PGRST204' ||
+    /column .* does not exist/i.test(err.message||'') ||
+    /could not find the .* column/i.test(err.message||'')
+  );
+}
+
+function extractMissingColumn(err){
+  const m1 = (err.message||'').match(/'([^']+)'\s+column/i);
+  if (m1 && m1[1]) return m1[1];
+  const m2 = (err.message||'').match(/column\s+"?([a-zA-Z0-9_]+)"?\s+does not exist/i);
+  if (m2 && m2[1]) return m2[1];
+  return null;
+}
+
+/* Generic save with automatic column mapping + pruning */
+async function saveProduct({ id, base }) {
+  // try 1: new schema
+  let payload = { ...base };
+  let triedLegacy = false;
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    let res;
+    if (id) res = await sb.from('products').update(payload).eq('id', id);
+    else    res = await sb.from('products').insert(payload);
+
+    if (!res.error) return { ok: true };
+
+    const err = res.error;
+
+    // first fallback: convert to legacy naming once
+    if (!triedLegacy && isColumnMissing(err)) {
+      payload = toLegacyPayload(payload);
+      triedLegacy = true;
+      continue;
+    }
+
+    // subsequent fallbacks: drop the specific missing column and retry
+    if (isColumnMissing(err)) {
+      const col = extractMissingColumn(err);
+      if (col && (col in payload)) {
+        delete payload[col];
+        continue;
+      }
+    }
+
+    // other errors → stop
+    return { ok:false, error: err };
+  }
+  return { ok:false, error: { message:'Too many retries' } };
 }
 
 /* ====== Load & Render ====== */
@@ -273,15 +315,14 @@ function openEditor(id){
   dlg.showModal();
 }
 
-/* ====== Save (insert/update) with schema fallback ====== */
+/* ====== Save (insert/update) ====== */
 form.onsubmit = async (e)=>{
   e.preventDefault();
 
-  // upload first if a file chosen
+  // upload first if a file chosen (bucket must exist and be public)
   const file = $('#fileInput').files[0];
   if (file){
     const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
-    // Ensure you created a public bucket named "product-images" in Supabase Storage
     const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
     if (upErr){ alert('Upload failed: ' + upErr.message); console.error(upErr); return; }
     const { data:pub } = sb.storage.from('product-images').getPublicUrl(filename);
@@ -289,25 +330,15 @@ form.onsubmit = async (e)=>{
   }
 
   const base = buildBasePayload();
-  let err;
+  const id = form.id.value || null;
 
-  if (form.id.value){
-    // try new schema
-    ({ error: err } = await sb.from('products').update(base).eq('id', form.id.value));
-    if (isColumnMissing(err)){
-      // retry legacy
-      const legacy = toLegacyPayload(base);
-      ({ error: err } = await sb.from('products').update(legacy).eq('id', form.id.value));
-    }
-  } else {
-    ({ error: err } = await sb.from('products').insert(base));
-    if (isColumnMissing(err)){
-      const legacy = toLegacyPayload(base);
-      ({ error: err } = await sb.from('products').insert(legacy));
-    }
+  const result = await saveProduct({ id, base });
+
+  if (!result.ok){
+    alert('Update failed: ' + (result.error?.message || 'unknown'));
+    console.error(result.error);
+    return;
   }
-
-  if (err){ alert('Update failed: ' + (err.message||'unknown')); console.error(err); return; }
 
   dlg.close();
   await load();
@@ -328,7 +359,6 @@ document.getElementById('btnAdd').onclick = ()=> openEditor();
 document.getElementById('btnSignOut').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
 document.getElementById('q').addEventListener('input', e=>{ FILTER = e.target.value; render(); });
 
-/* ====== Delete item helper ====== */
 async function delItem(id){
   if (!confirm('Delete this item?')) return;
   const { error } = await sb.from('products').delete().eq('id', id);
@@ -336,7 +366,7 @@ async function delItem(id){
   await load();
 }
 
-/* ====== Boot (no top-level await) ====== */
+/* ====== Boot ====== */
 (async function boot(){
   try {
     await requireAdmin();
