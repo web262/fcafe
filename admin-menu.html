@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Menu Manager | CAFE — CACAO</title>
 
-  <!-- Inline favicon to remove ERR_NAME_NOT_RESOLVED warnings -->
+  <!-- Inline favicon to avoid net::ERR_NAME_NOT_RESOLVED -->
   <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="%23000"/><text x="50" y="62" font-size="60" text-anchor="middle" fill="%23fff" font-family="Inter,Arial">C</text></svg>'>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -24,7 +24,6 @@
     .card:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.08)}
     .btn{padding:.5rem .75rem;border:1px solid rgba(15,23,42,.12);border-radius:.75rem;background:#fff}
     .btn-black{background:#000;color:#fff;border-color:#000}
-    .glass{backdrop-filter:saturate(130%) blur(10px); background:rgba(255,255,255,.6)}
     .chip{border-radius:.75rem;padding:.35rem .6rem;border:1px solid rgba(15,23,42,.12);}
   </style>
 </head>
@@ -173,10 +172,9 @@ let FILTER = '';
 
 const money = v => (Number(v)||0).toLocaleString('vi-VN') + ' VND';
 
-/* Reset any persisted query so new items never get hidden accidentally */
+/* Reset stale search and wire search box */
 qInput.value = '';
 btnClear.classList.add('hidden');
-
 qInput.addEventListener('input', () => {
   FILTER = (qInput.value || '').trim().toLowerCase();
   btnClear.classList.toggle('hidden', FILTER === '');
@@ -229,7 +227,7 @@ function extractMissingColumn(err){
   return null;
 }
 
-/* Generic save with automatic column mapping + pruning */
+/* Save with schema fallback + pruning */
 async function saveProduct({ id, base }) {
   let payload = { ...base };
   let triedLegacy = false;
@@ -296,7 +294,7 @@ function render(){
         ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover" alt="">` : ''}
       </div>
       <div class="mt-2 font-semibold flex items-center gap-2">
-        ${!p.is_available && (p.is_available !== undefined) ? `<span class="chip text-xs">hidden</span>` : ''}
+        ${(!p.is_available && p.is_available !== undefined) ? `<span class="chip text-xs">hidden</span>` : ''}
         <span>${pickName(p)}</span>
       </div>
       <div class="text-sm text-neutral-600">${p.category||''} ${p.subcategory?('• '+p.subcategory):''}</div>
@@ -309,15 +307,29 @@ function render(){
     grid.appendChild(card);
   });
 
-  grid.querySelectorAll('[data-edit]').forEach(b=> b.onclick = ()=> openEditor(b.dataset.edit));
-  grid.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=> delItem(b.dataset.del));
+  // EDIT
+  grid.querySelectorAll('[data-edit]').forEach(b=>{
+    b.onclick = ()=> openEditor(b.dataset.edit);
+  });
+
+  // DELETE (inlined logic to avoid any scope issues)
+  grid.querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick = async ()=>{
+      const id = b.dataset.del;
+      if (!id) return;
+      if (!confirm('Delete this item?')) return;
+      const { error } = await sb.from('products').delete().eq('id', id);
+      if (error){ alert('Delete failed: ' + error.message); console.error(error); return; }
+      await load();
+    };
+  });
 }
 
 /* ====== Editor ====== */
 function openEditor(id){
   form.reset();
-  $('#dlgTitle').textContent = id ? 'Edit product' : 'Add product';
-  $('#btnDelete').style.display = id ? 'inline-flex' : 'none';
+  document.getElementById('dlgTitle').textContent = id ? 'Edit product' : 'Add product';
+  document.getElementById('btnDelete').style.display = id ? 'inline-flex' : 'none';
 
   if (id){
     const p = PRODUCTS.find(x => String(x.id) === String(id));
@@ -331,8 +343,8 @@ function openEditor(id){
       form.size.value = p.size || '';
       form.description_vi.value = p.description_vi || p.description || '';
       form.image_url.value = p.image_url || '';
-      $('#is_available').checked = ('is_available' in p) ? !!p.is_available :
-                                   (('is_active' in p) ? !!p.is_active : true);
+      document.getElementById('is_available').checked =
+        ('is_available' in p) ? !!p.is_available : (('is_active' in p) ? !!p.is_active : true);
     }
   }
   dlg.showModal();
@@ -343,7 +355,7 @@ form.onsubmit = async (e)=>{
   e.preventDefault();
 
   // upload first if a file chosen (bucket must exist and be public)
-  const file = $('#fileInput').files[0];
+  const file = document.getElementById('fileInput').files[0];
   if (file){
     const filename = `${crypto.randomUUID()}_${file.name.replace(/\s+/g,'_')}`;
     const { error:upErr } = await sb.storage.from('product-images').upload(filename, file);
@@ -363,13 +375,14 @@ form.onsubmit = async (e)=>{
     return;
   }
 
-  // Clear the filter so the row can’t be hidden after save
+  // Clear the filter so a just-created/renamed item isn't hidden
   qInput.value = ''; FILTER = ''; btnClear.classList.add('hidden');
 
   dlg.close();
   await load();
 };
 
+// Footer delete in dialog
 document.getElementById('btnDelete').onclick = async (e)=>{
   e.preventDefault();
   if (!form.id.value) return;
@@ -380,19 +393,21 @@ document.getElementById('btnDelete').onclick = async (e)=>{
   await load();
 };
 
-/* ====== Events ====== */
+/* ====== Misc events ====== */
 document.getElementById('btnAdd').onclick = ()=> openEditor();
 document.getElementById('btnSignOut').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
 
 /* ====== Realtime auto-refresh ====== */
 let channel;
 function subscribeRealtime(){
+  // Listen to inserts/updates/deletes on products and refresh the grid
   channel = sb.channel('realtime-products')
     .on('postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
-        async (_payload) => { await load(); })
+        async () => { await load(); })
     .subscribe();
 }
+window.addEventListener('beforeunload', ()=>{ if (channel) sb.removeChannel(channel); });
 
 /* ====== Boot ====== */
 (async function boot(){
